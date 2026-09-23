@@ -19,10 +19,10 @@ In the browser panel, open **Explore** or **All controls**, find **LED matrix**,
 | View | What the lower rows show | Useful when |
 | --- | --- | --- |
 | **Status** | Up to four horizontal bars, one for each synth voice. Each bar follows that voice's envelope level. | Checking which voices are active or releasing. |
-| **VU meter** | One horizontal bar on the fifth row, plus a peak pixel. It follows the firmware's synthesized output level before the DAC. | Seeing relative output movement while playing. |
+| **VU meter** | Eleven vertical bars show recent mono output levels, oldest at left and newest beside the right-edge peak dot. The levels come from the synthesized signal before the DAC. | Seeing how loudness changes across roughly the last third of a second. |
 | **Scope** | A moving, automatically scaled trace with one dot per column. It samples the synthesized output before the DAC. | Seeing the shape and movement of the generated waveform. |
 
-**VU** and **Scope** are visual guides, not calibrated level meters or measurements at the audio jack. Because the audio output stage is not assembled yet, their real-world relationship to a mixer or headphones remains untested. [Output sampling and display calculations](../QuarkWave_MIDI/QuarkWave_MIDI.ino), [connection guide](connection-guide.md).
+The VU bars are **recent levels over time**. They are not frequency bands or stereo channels; QuarkWave currently produces one mono signal. Each settled VU frame adds one level about every 33 ms. The rightmost column holds the peak dot and leaves its bottom pixel free for the timing diagnostic. **VU** and **Scope** are visual guides, not calibrated level meters or measurements at the audio jack. Because the audio output stage is not assembled yet, their real-world relationship to a mixer or headphones remains untested. [Output sampling and display calculations](../QuarkWave_MIDI/QuarkWave_MIDI.ino), [connection guide](connection-guide.md).
 
 ## The top row stays useful in every view
 
@@ -57,7 +57,7 @@ The matrix first plays a boot animation and scrolls **QuarkWave**. The Uno no lo
 - **Heartbeat blinks, Pico pixel is dark:** the display loop is running, but the Uno has not received a recent Pico readiness request. Check the browser's separate Pico and Uno connection labels and the inter-board wiring. The Pico-to-Uno link can be offline while the Uno remains playable from its separate DIN input.
 - **Column 9 flashes:** a DIN sound message or Pico-forwarded wireless sound message arrived. Check the Pico's RTP connection label to distinguish wireless session status; column 9 by itself cannot do that.
 - **Wi-Fi group is dark:** expected in this build. Check the Pico or browser for network status; the Uno can still play through its separate DIN input, subject to its wiring.
-- **Voice bars move but VU seems still:** switch to VU and play again. Status follows individual voice envelopes; VU follows the final synthesized output, so they are not identical.
+- **Voice bars move but VU seems still:** switch to VU and play again. Status follows individual voice envelopes; VU follows the final synthesized output. A new VU view starts with an empty history and fills as frames arrive.
 - **A mode label is scrolling:** wait for the text to cross the matrix and the selected view to resume. Keys remain playable during the scroll.
 
 These are reading aids, not a substitute for checking MIDI reception and audio on the assembled instrument. [Pico–Uno connection behavior](technical-guide.md#patch-lifecycle-and-storage), [hardware test log](hardware-test-log.md).

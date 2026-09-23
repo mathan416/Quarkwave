@@ -175,6 +175,7 @@ static bool ledStalled = false;
 // Lightweight actual-output meters for LED visualizers.
 static float vizLevel = 0.0f;
 static float vizPeak = 0.0f;
+static uint8_t vuHistory[11] = { 0 }; // Oldest at left, newest beside the peak column.
 static const float VU_DISPLAY_GAIN = 2.5f;
 static const float SCOPE_TARGET_PEAK = 0.90f;
 static const float SCOPE_MAX_GAIN = 24.0f;
@@ -1470,15 +1471,20 @@ void ledsStatusMeters() {
 }
 
 void ledsVU() {
-  // Square-root scaling makes ordinary synth levels visible without pinning
-  // loud signals at full scale.
+  // Eleven recent mono output levels make a moving bank of vertical bars.
+  // The last column is a peak marker; the bottom-right timing pixel stays free.
   const float level = sqrtf(clampf(vizLevel * VU_DISPLAY_GAIN, 0.0f, 1.0f));
   const float peakLevel = sqrtf(clampf(vizPeak * VU_DISPLAY_GAIN, 0.0f, 1.0f));
+  for (uint8_t c = 0; c < 10; ++c) vuHistory[c] = vuHistory[c + 1];
+  vuHistory[10] = (uint8_t)roundf(level * 7.0f);
   ledsClear();
-  int bars = (int)roundf(level * 12.0f);
-  int peak = (int)roundf(peakLevel * 11.0f);
-  for (int c = 0; c < bars && c < 12; c++) ledsSet(c, 4, true);
-  if (peakLevel > 0.03f && peak >= 0 && peak < 12) ledsSet(peak, 4, true);
+  for (uint8_t c = 0; c < 11; ++c)
+    for (uint8_t height = 0; height < vuHistory[c]; ++height)
+      ledBuf[7 - height][c] = 1;
+  if (peakLevel > 0.03f) {
+    const uint8_t peak = (uint8_t)roundf(peakLevel * 6.0f);
+    ledBuf[7 - (peak > 0 ? peak : 1)][11] = 1;
+  }
   drawTopPips();
   drawStatusOverlays();
   ledsRender();
@@ -1813,6 +1819,7 @@ void resetToDefaults() {
 
 static void setViz(uint8_t m, const char* label) {
   vizMode = (VizMode)(m > 2 ? 2 : m);
+  if (vizMode == VIZ_VU) memset(vuHistory, 0, sizeof(vuHistory));
   // Advance the label in matrixScrollTick(), so MIDI and audio keep running.
   matrixStartScroll(label, 900, 0xFFFFFF);
   Serial.print(F("[Viz] "));

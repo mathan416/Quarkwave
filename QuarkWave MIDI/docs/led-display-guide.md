@@ -10,7 +10,7 @@ The Uno R4 WiFi has a **12-column × 8-row red LED matrix**. It gives a quick vi
 
 ## Choose a view
 
-In the browser panel, open **Explore** or **All controls**, find **LED matrix**, and choose **Status**, **VU meter**, or **Scope**. These change only the Uno display; they do not change the sound. Status is the default after boot or a synth reset. The selector sends Pico-to-Uno Program Changes **10**, **11**, and **12** respectively. The Uno briefly shows **ST**, **VU**, or **SC** without stopping note processing, then returns to the selected display. These display commands are accepted only on the Pico UART, not on the separate DIN or RTP-MIDI inputs. [Browser control](../QuarkWave_UI_MIDI/QuarkWave_UI.h), [Uno display selection](../QuarkWave_MIDI/QuarkWave_MIDI.ino).
+In the browser panel, open **Explore** or **All controls**, find **LED matrix**, and choose **Status**, **VU meter**, or **Scope**. These change only the Uno display; they do not change the sound. Status is the default after boot or a synth reset. The selector sends Pico-to-Uno Program Changes **10**, **11**, and **12** respectively. The Uno scrolls **Viz: Status**, **Viz: VU**, or **Viz: Scope** across the matrix while note processing continues, then returns to the selected display. These display commands are accepted only on the Pico UART, not on the separate DIN or RTP-MIDI inputs. [Browser control](../QuarkWave_UI_MIDI/QuarkWave_UI.h), [Uno display selection](../QuarkWave_MIDI/QuarkWave_MIDI.ino).
 
 ![Illustrative 12 by 8 LED matrices for Status, VU meter, and Scope](images/uno-led-modes.svg)
 
@@ -50,13 +50,13 @@ The **bottom-right pixel** is a timing diagnostic. It can light for a frame if m
 
 ## What happens at startup
 
-The matrix first plays a boot animation and scrolls **QuarkWave**. While Wi-Fi starts, a two-pixel “comet” moves across the fourth row. The Uno then scrolls its IP address or **No WiFi**. An RTP connection briefly shows **RT**. Changing the display view briefly shows **ST**, **VU**, or **SC**; the regular matrix view resumes after about 450 ms. Startup text still scrolls. [Boot animation](../QuarkWave_MIDI/QuarkWave_MIDI.ino), [Wi-Fi display](../QuarkWave_MIDI/QuarkWave_MIDI.ino), [RTP notification](../QuarkWave_MIDI/QuarkWave_MIDI.ino).
+The matrix first plays a boot animation and scrolls **QuarkWave**. While Wi-Fi starts, a two-pixel “comet” moves across the fourth row. The Uno then scrolls its IP address or **No WiFi**. An RTP connection scrolls **RTP Connected**. Changing the display view scrolls **Viz: Status**, **Viz: VU**, or **Viz: Scope**. The selected view resumes after the text finishes crossing the matrix and a brief hold. Note processing continues during the scroll. [Boot animation](../QuarkWave_MIDI/QuarkWave_MIDI.ino), [Wi-Fi display](../QuarkWave_MIDI/QuarkWave_MIDI.ino), [RTP notification](../QuarkWave_MIDI/QuarkWave_MIDI.ino).
 
 ## Quick checks
 
 - **Heartbeat blinks, Pico pixel is dark:** the display loop is running, but the Uno has not received a recent Pico readiness request. Check the browser's separate Pico and Uno connection labels and the inter-board wiring. The Pico-to-Uno link can be offline even while Uno Wi-Fi is connected.
 - **Wi-Fi group is dark:** the Uno firmware does not currently report Wi-Fi connected. It can still play from its other available MIDI inputs, subject to their wiring.
 - **Voice bars move but VU seems still:** switch to VU and play again. Status follows individual voice envelopes; VU follows the final synthesized output, so they are not identical.
-- **A short mode label is showing:** wait about half a second for the selected view to resume. Startup text can take longer to scroll.
+- **A mode label is scrolling:** wait for the text to cross the matrix and the selected view to resume. Keys remain playable during the scroll.
 
 These are reading aids, not a substitute for checking MIDI reception and audio on the assembled instrument. [Pico–Uno connection behavior](technical-guide.md#patch-lifecycle-and-storage), [hardware test log](hardware-test-log.md).

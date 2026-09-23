@@ -135,6 +135,12 @@ static const float SVF_CUTOFF_TAU_MS = 18.0f;
 
 // ---------- Milestones / diagnostics ----------
 static uint32_t matrixHoldUntil = 0;
+static char matrixScrollText[24] = {0};
+static int16_t matrixScrollX = 0, matrixScrollEndX = 0;
+static uint32_t matrixScrollNextMs = 0;
+static uint16_t matrixScrollHoldMs = 0;
+static uint32_t matrixScrollColor = 0xFFFFFF;
+static bool matrixScrollActive = false;
 // A UART being initialized does not prove that a Pico is attached.
 static bool picoLinkSeen = false;
 static uint32_t lastPicoHelloMs = 0;
@@ -1462,7 +1468,7 @@ void ledsScope() {
 }
 
 void ledsUpdate() {
-  if ((int32_t)(millis() - matrixHoldUntil) < 0) return;
+  if (matrixScrollActive || (int32_t)(millis() - matrixHoldUntil) < 0) return;
 
   static uint32_t _lastLEDTick = 0;
   uint32_t now = millis();
@@ -1488,15 +1494,35 @@ void matrixScrollOnce(const char* s, uint16_t ms = 1800, uint32_t color = 0xFFFF
   matrixHoldUntil = millis() + ms;
 }
 
-void matrixFlashLabel(const char* label, uint16_t holdMs) {
+void matrixStartScroll(const char* label, uint16_t holdMs, uint32_t color) {
+  strncpy(matrixScrollText, label, sizeof(matrixScrollText) - 1);
+  matrixScrollText[sizeof(matrixScrollText) - 1] = '\0';
+  matrix.textFont(Font_5x7);
+  matrixScrollX = 12;
+  matrixScrollEndX = -(int16_t)(strlen(matrixScrollText) * matrix.textFontWidth());
+  matrixScrollNextMs = millis();
+  matrixScrollHoldMs = holdMs;
+  matrixScrollColor = color;
+  matrixScrollActive = true;
+}
+
+void matrixScrollTick() {
+  if (!matrixScrollActive) return;
+  const uint32_t now = millis();
+  if ((int32_t)(now - matrixScrollNextMs) < 0) return;
+  if (matrixScrollX < matrixScrollEndX) {
+    matrixScrollActive = false;
+    matrixHoldUntil = now + matrixScrollHoldMs;
+    return;
+  }
   matrix.beginDraw();
   matrix.clear();
   matrix.textFont(Font_5x7);
-  matrix.beginText(0, 1, 0xFFFFFF);
-  matrix.print(label);
-  matrix.endText();
+  matrix.stroke(matrixScrollColor);
+  matrix.text(matrixScrollText, matrixScrollX, 1);
   matrix.endDraw();
-  matrixHoldUntil = millis() + holdMs;
+  --matrixScrollX;
+  matrixScrollNextMs += 50;
 }
 
 // ---------- Wi-Fi / BLE / MIDI init ----------
@@ -1730,15 +1756,16 @@ void resetToDefaults() {
     // === Reset visualization ===
     vizMode = VIZ_STATUS;
     noteBlinkUntil = 0;
+    matrixScrollActive = false;
+    matrixHoldUntil = 0;
     
     Serial.println(F("[MIDI] Reset complete"));
 }
 
 static void setViz(uint8_t m, const char* label) {
   vizMode = (VizMode)(m > 2 ? 2 : m);
-  // Scrolling text blocks MIDI and audio for several seconds.
-  static const char* const shortNames[] = {"ST", "VU", "SC"};
-  matrixFlashLabel(shortNames[vizMode], 450);
+  // Advance the label in matrixScrollTick(), so MIDI and audio keep running.
+  matrixStartScroll(label, 900, 0xFFFFFF);
   Serial.print(F("[Viz] "));
   Serial.println(label);
 }
@@ -1868,7 +1895,7 @@ void setupRTP() {
   ApplertpMIDI.setHandleConnected([](const APPLEMIDI_NAMESPACE::ssrc_t&, const char*) {
     rtpOK = true;
     Serial.println(F("[RTP] Connected"));
-    matrixFlashLabel("RT", 450);
+    matrixStartScroll("RTP Connected", 1200, 0xFFFFFF);
   });
 
   ApplertpMIDI.setHandleDisconnected([](const APPLEMIDI_NAMESPACE::ssrc_t&) {
@@ -2252,6 +2279,7 @@ void loop() {
   // ----- LEDs at ~30 FPS -----
   if (now - tLED > 33) {
     tLED = now;
-    ledsUpdate();
+    if (matrixScrollActive) matrixScrollTick();
+    else ledsUpdate();
   }
 }

@@ -25,7 +25,7 @@ The two sketches and embedded browser page are the source of truth for these pag
 
 | Component | Source | SHA-256 |
 | --- | --- | --- |
-| Uno R4 sound engine | [QuarkWave_MIDI.ino](../QuarkWave_MIDI/QuarkWave_MIDI.ino) | `b3bb960717a5b18127c4697817dca5a57693096a28661d2be29a46662942ef94` |
+| Uno R4 sound engine | [QuarkWave_MIDI.ino](../QuarkWave_MIDI/QuarkWave_MIDI.ino) | `b9e59b2a7fa1aa453ceaf63dc3d876f8fbfcfb3fde17759c243a9af98927d889` |
 | Pico W web controller | [QuarkWave_UI_MIDI.ino](../QuarkWave_UI_MIDI/QuarkWave_UI_MIDI.ino) | `7733641b8651cf2f9ba992490a02067783f2995ebb1b3a2d34e240dd6c84b794` |
 | Embedded browser panel | [QuarkWave_UI.h](../QuarkWave_UI_MIDI/QuarkWave_UI.h) | `6975cecbde628688c93ce3d2146a6dbdc03b2443f6a4dde6f8d89fa7827cf8df` |
 

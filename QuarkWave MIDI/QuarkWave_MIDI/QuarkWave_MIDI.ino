@@ -79,7 +79,7 @@ inline float zapDenorm(float x) {
   return (fabsf(x) < 1e-20f) ? 0.f : x;
 }
 struct SVF {
-  float g, R;
+  float g, R, a1, a2, a3;
   float ic1eq = 0, ic2eq = 0;
   float cutoff = 2000.0f, Q = 0.9f;
   bool enabled = true;
@@ -89,6 +89,9 @@ struct SVF {
     float q = clampf(Q, 0.5f, 3.0f);
     g = tanf(PI * fc / fs);
     R = 1.0f / q;
+    a1 = 1.0f / (1.0f + g * (g + R));
+    a2 = g * a1;
+    a3 = g * a2;
   }
   inline void setCutoff(float fc) {
     cutoff = fc;
@@ -96,11 +99,11 @@ struct SVF {
   }
   inline float process(float x) {
     if (!enabled) return x;
-    float v1 = (x - ic2eq) / (1.0f + R * g + g * g);
-    float v2 = g * v1;
-    float lp = ic2eq + g * (v1 + ic1eq);
-    ic1eq += 2.0f * v2 + R * v1;
-    ic2eq += 2.0f * lp;
+    const float v3 = x - ic2eq;
+    const float v1 = a1 * ic1eq + a2 * v3;
+    const float lp = ic2eq + a2 * ic1eq + a3 * v3;
+    ic1eq = 2.0f * v1 - ic1eq;
+    ic2eq = 2.0f * lp - ic2eq;
     ic1eq = zapDenorm(ic1eq);
     ic2eq = zapDenorm(ic2eq);
     return lp;
@@ -110,6 +113,7 @@ struct SVF {
 struct ADSR {
   float a, d, s, r, env;
   bool gate;
+  bool decaying;
 };
 struct Voice {
   bool active;
@@ -391,7 +395,7 @@ ArduinoLEDMatrix matrix;
 uint8_t ledBuf[8][12];
 volatile uint32_t ledCanary = 0xCAFEBABE;
 
-volatile uint8_t noteBlink = 0;
+static uint32_t noteBlinkUntil = 0;
 enum VizMode : uint8_t { VIZ_STATUS = 0,
                          VIZ_VU = 1,
                          VIZ_SCOPE = 2 } vizMode = VIZ_STATUS;
@@ -508,12 +512,20 @@ inline float oscRead(const float ph, const float morph01) {
 // ADSR
 inline void adsrTick(struct ADSR& e, const float dt) {
   if (e.gate) {
-    if (e.env < 1.0f) {
+    if (!e.decaying) {
       e.env += dt / maxf(1e-5f, e.a);
-      if (e.env > 1.0f) e.env = 1.0f;
-    } else if (e.env > e.s) {
-      e.env -= dt / maxf(1e-5f, e.d);
-      if (e.env < e.s) e.env = e.s;
+      if (e.env >= 1.0f) {
+        e.env = 1.0f;
+        e.decaying = true;
+      }
+    } else {
+      const float sustain = clampf(e.s, 0.0f, 1.0f);
+      if (e.env > sustain) {
+        e.env -= dt / maxf(1e-5f, e.d);
+        if (e.env < sustain) e.env = sustain;
+      } else if (e.env < sustain) {
+        e.env = sustain;
+      }
     }
   } else {
     e.env -= dt / maxf(1e-5f, e.r);
@@ -527,14 +539,17 @@ void svfUpdateCoeffs() {
   float Q = clampf(resonance, 0.5f, 3.0f);
   svf.g = tanf(PI * fc / SAMPLE_RATE);
   svf.R = 1.0f / Q;
+  svf.a1 = 1.0f / (1.0f + svf.g * (svf.g + svf.R));
+  svf.a2 = svf.g * svf.a1;
+  svf.a3 = svf.g * svf.a2;
 }
 inline float svfProcess(float x) {
   if (!svf.enabled) return x;
-  float v1 = (x - svf.ic2eq) * 1.0f / (1.0f + svf.R * svf.g + svf.g * svf.g);
-  float v2 = svf.g * v1;
-  float lp = svf.ic2eq + svf.g * (v1 + svf.ic1eq);
-  svf.ic1eq += 2.0f * v2 + svf.R * v1;
-  svf.ic2eq += 2.0f * lp;
+  const float v3 = x - svf.ic2eq;
+  const float v1 = svf.a1 * svf.ic1eq + svf.a2 * v3;
+  const float lp = svf.ic2eq + svf.a2 * svf.ic1eq + svf.a3 * v3;
+  svf.ic1eq = 2.0f * v1 - svf.ic1eq;
+  svf.ic2eq = 2.0f * lp - svf.ic2eq;
   svf.ic1eq = zapDenorm(svf.ic1eq);
   svf.ic2eq = zapDenorm(svf.ic2eq);
   return lp;
@@ -594,6 +609,7 @@ static float chRate1 = 0.25f, chRate2 = 0.33f;
 static float chDepth = 5.0f;
 static float chMix = 0.25f;
 static float chPh1 = 0.0f, chPh2 = 0.5f;
+static uint8_t chOffset1 = CH_BUF / 3, chOffset2 = CH_BUF / 3;
 #else
 static float chMix = 0.0f;
 static float chDepth = 0.0f;
@@ -665,7 +681,8 @@ static void triggerVoiceNote(uint8_t note, uint8_t vel) {
     }
   }
   v.eg.gate = true;
-  noteBlink = 4;
+  v.eg.decaying = false;
+  noteBlinkUntil = millis() + 400;
 }
 
 static void releaseVoiceNote(uint8_t note) {
@@ -677,6 +694,7 @@ static void silenceVoicesImmediately() {
   for (auto& v : V) {
     v.active = false;
     v.eg.gate = false;
+    v.eg.decaying = false;
     v.eg.env = 0.0f;
   }
 }
@@ -1103,6 +1121,9 @@ void handleCC(uint8_t cc, uint8_t val) {
 // ---------- Audio engine ----------
 void audioInit() {
   analogWriteResolution(12);
+  // The core's analogWrite() reopens the DAC on every call. Configure A0
+  // once, then write its 12-bit data register for each audio sample.
+  analogWrite(A0, 2048);
   nextSample = micros();
   sampleRemainder = 0;
   initWavetables();
@@ -1110,7 +1131,7 @@ void audioInit() {
   updateGlideAlpha();
   for (auto& v : V) {
     v.active = false;
-    v.eg = { 0.005f, 0.08f, 0.7f, 0.25f, 0.0f, false };
+    v.eg = { 0.005f, 0.08f, 0.7f, 0.25f, 0.0f, false, false };
     v.unison = 1;
     v.vel = 0.8f;
     for (uint8_t u = 0; u < MAX_UNISON; u++) {
@@ -1170,6 +1191,7 @@ inline bool audioTick() {
   const float dt = 1.0f / SAMPLE_RATE;
 
   const float bend = pitchBendRatio * lfo2Ratio;
+  static const float invUnison[] = {0.0f, 1.0f, 0.5f, 1.0f / 3.0f};
 
 #if PER_VOICE_FILTER
   float y = 0.0f;
@@ -1179,7 +1201,7 @@ inline bool audioTick() {
     glideTick(v);
 
     float sum = 0.0f;
-    const float invU = 1.0f / (float)v.unison;
+    const float invU = invUnison[v.unison];
     for (uint8_t u = 0; u < v.unison; ++u) {
       const float s = oscRead(v.phase[u], morph);
       const int8_t pos = unisonPosition(v.unison, u);
@@ -1215,7 +1237,7 @@ inline bool audioTick() {
     glideTick(v);
 
     float sum = 0.0f;
-    const float invU = 1.0f / (float)v.unison;
+    const float invU = invUnison[v.unison];
     for (uint8_t u = 0; u < v.unison; ++u) {
       const float s = oscRead(v.phase[u], morph);
       const int8_t pos = unisonPosition(v.unison, u);
@@ -1249,17 +1271,9 @@ inline bool audioTick() {
   // --- CHORUS (pre-delay)
 #if USE_CHORUS
   chBuf[chW] = (int8_t)roundf(clampf(y, -1.0f, 1.0f) * 127.0f);
-  auto chTap = [&](float& ph, float rate) -> float {
-    ph += rate / SAMPLE_RATE;
-    if (ph >= 1.0f) ph -= 1.0f;
-    const float lf = sinf(2.0f * PI * ph);
-    const float dSamples = (CH_BUF / 3) + lf * chDepth;
-    int rd = (int)(chW - (int)dSamples);
-    while (rd < 0) rd += CH_BUF;
-    return chBuf[rd % CH_BUF] / 127.0f;
-  };
-  const float t1 = chTap(chPh1, chRate1), t2 = chTap(chPh2, chRate2);
-  chW = (uint16_t)((chW + 1) % CH_BUF);
+  const float t1 = chBuf[(chW + CH_BUF - chOffset1) & (CH_BUF - 1)] / 127.0f;
+  const float t2 = chBuf[(chW + CH_BUF - chOffset2) & (CH_BUF - 1)] / 127.0f;
+  chW = (chW + 1) & (CH_BUF - 1);
   const float chor = 0.5f * (t1 + t2);
   y = y * (1.0f - chMix) + chor * chMix;
 #endif
@@ -1306,7 +1320,7 @@ inline bool audioTick() {
   }
 
   const uint16_t dac = (uint16_t)((y * 0.5f + 0.5f) * 4095.0f);
-  analogWrite(A0, dac);
+  R_DAC->DADR[0] = dac;
   return true;
 }
 
@@ -1387,9 +1401,8 @@ void ledsWarmupComet() {
 
 void ledsStatusMeters() {
   ledsClear();
-  if (noteBlink) {
+  if ((int32_t)(millis() - noteBlinkUntil) < 0) {
     ledBuf[0][9] = 1;
-    noteBlink--;
   }
 
   for (int i = 0; i < NUM_VOICES; ++i) {
@@ -1473,6 +1486,17 @@ void matrixScrollOnce(const char* s, uint16_t ms = 1800, uint32_t color = 0xFFFF
   matrix.endText(SCROLL_LEFT);
   matrix.endDraw();
   matrixHoldUntil = millis() + ms;
+}
+
+void matrixFlashLabel(const char* label, uint16_t holdMs) {
+  matrix.beginDraw();
+  matrix.clear();
+  matrix.textFont(Font_5x7);
+  matrix.beginText(0, 1, 0xFFFFFF);
+  matrix.print(label);
+  matrix.endText();
+  matrix.endDraw();
+  matrixHoldUntil = millis() + holdMs;
 }
 
 // ---------- Wi-Fi / BLE / MIDI init ----------
@@ -1569,6 +1593,7 @@ void resetToDefaults() {
     smReso.setValue(0.9f);
     resonance = 0.9f;
     svf.enabled = true;
+    svf.ic1eq = svf.ic2eq = 0.0f;
     svfUpdateCoeffs();
     
     // === Motion ===
@@ -1661,6 +1686,7 @@ void resetToDefaults() {
     for (auto& v : V) {
         v.active = false;
         v.eg.gate = false;
+        v.eg.decaying = false;
         v.eg.env = 0.0f;
         v.unison = 1;
         v.vel = 0.8f;
@@ -1703,15 +1729,16 @@ void resetToDefaults() {
     
     // === Reset visualization ===
     vizMode = VIZ_STATUS;
-    noteBlink = 0;
+    noteBlinkUntil = 0;
     
     Serial.println(F("[MIDI] Reset complete"));
 }
 
 static void setViz(uint8_t m, const char* label) {
   vizMode = (VizMode)(m > 2 ? 2 : m);
-  noteBlink = 6;
-  matrixScrollOnce(label, 900, 0xFFFFFF);
+  // Scrolling text blocks MIDI and audio for several seconds.
+  static const char* const shortNames[] = {"ST", "VU", "SC"};
+  matrixFlashLabel(shortNames[vizMode], 450);
   Serial.print(F("[Viz] "));
   Serial.println(label);
 }
@@ -1841,8 +1868,7 @@ void setupRTP() {
   ApplertpMIDI.setHandleConnected([](const APPLEMIDI_NAMESPACE::ssrc_t&, const char*) {
     rtpOK = true;
     Serial.println(F("[RTP] Connected"));
-    noteBlink = 10;
-    matrixScrollOnce("RTP Connected", 1200, 0xFFFFFF);
+    matrixFlashLabel("RT", 450);
   });
 
   ApplertpMIDI.setHandleDisconnected([](const APPLEMIDI_NAMESPACE::ssrc_t&) {
@@ -1932,6 +1958,14 @@ inline float maxVoiceVelocity() {
 
 inline void controlTick() {
   selectClock(micros());
+#if USE_CHORUS
+  chPh1 += chRate1 * CTRL_DT;
+  chPh2 += chRate2 * CTRL_DT;
+  if (chPh1 >= 1.0f) chPh1 -= 1.0f;
+  if (chPh2 >= 1.0f) chPh2 -= 1.0f;
+  chOffset1 = (uint8_t)((CH_BUF / 3) + wtReadSine(((uint16_t)(chPh1 * WT_SIZE)) & (WT_SIZE - 1)) * chDepth);
+  chOffset2 = (uint8_t)((CH_BUF / 3) + wtReadSine(((uint16_t)(chPh2 * WT_SIZE)) & (WT_SIZE - 1)) * chDepth);
+#endif
   if (externalTransportRunning) externalBeatPosition += (bpmExt / 60.0f) * CTRL_DT;
   // --- LFO1 (modulation)
   float lfoRate = lfoRateHz;
@@ -2142,6 +2176,10 @@ void setup() {
 #endif
 
   Serial.println(F("[BOOT] Ready for UART commands on Serial1"));
+  // Wi-Fi startup may have taken seconds; do not synthesize its elapsed time.
+  nextSample = micros();
+  sampleRemainder = 0;
+  nextCtrlAt = nextSample;
 }
 
 // ===================== Main loop =====================
@@ -2150,8 +2188,14 @@ void loop() {
   static uint32_t tLED = 0;
 
   // ----- AUDIO FIRST -----
-  // Drain a small, bounded backlog so occasional MIDI/LED/network work does
-  // not permanently discard elapsed synthesis time.
+  // Keep a short catch-up window after MIDI/network work. If synthesis cannot
+  // keep up with wall time, drop stale work instead of racing through seconds
+  // of old audio after notes are released.
+  const uint32_t audioNow = micros();
+  if ((int32_t)(audioNow - nextSample) > 2000) {
+    nextSample = audioNow;
+    sampleRemainder = 0;
+  }
   for (uint8_t generated = 0; generated < 4 && audioTick(); ++generated) {}
 
   // ----- DIN & PICO MIDI -----
@@ -2165,7 +2209,13 @@ void loop() {
   // ----- RTP-MIDI (if enabled) -----
 #if USE_RTP_MIDI
 #if USE_WIFI_STACK
-  if (wifiOK) rtpMIDI.read();
+  // WiFiS3 checks both UDP ports through synchronous modem commands. Polling
+  // on every loop starves the synth even when no RTP peer is connected.
+  static uint32_t nextRtpPoll = 0;
+  if (wifiOK && (int32_t)(millis() - nextRtpPoll) >= 0) {
+    nextRtpPoll = millis() + (rtpIsUp() ? 50u : 250u);
+    rtpMIDI.read();
+  }
 #else
   rtpMIDI.read();
 #endif

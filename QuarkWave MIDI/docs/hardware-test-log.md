@@ -111,3 +111,23 @@ A temporary Uno build counted successful DAC updates over a five-second window a
 The full-load improvement is about 48%, but every measured load above remains below the 22,050-updates/s target. The largest remaining cost is twelve active oscillators; all-effects processing also consumes time. The firmware still requests 22,050 updates/s and drops overdue work after a long block. These figures do not claim an achieved 22.05 kHz output during the stress test.
 
 The release change keeps the delay's 8-bit, 11,025 Hz ring so its maximum synced time and current sound resolution are retained. A fixed delay rate also prevents its RAM use from growing with a future oscillator-rate change. A separate 44.1 kHz compile now fits RAM, whereas the prior source failed to link; this is a compile-only check, and the measured CPU load does not support changing the deployed rate. The tap length, envelope increments, waveform morph segment, bitcrush settings, and tremolo step now avoid redundant per-sample calculations; ring wrap uses a comparison instead of division. Waveform blend and delay ring arithmetic were checked against the previous equations over 100,000 morph cases and ring endpoints. The clean 22.05 kHz Uno sketch compiled, was uploaded, and the Pico reported `connected: true`, `syncFailed: false`, `mode: pico`; a brief browser note test completed. The line-output circuit is unbuilt, so audible quality and DAC timing remain unverified. [Uno source](../QuarkWave_MIDI/QuarkWave_MIDI.ino).
+
+## Four-voice performance refinement — 2026-09-23
+
+The same five-second direct-voice stress test described above was repeated with four notes, three unison oscillators per note, and all listed effects stressed. The sketch's requested rate stayed **22,050 updates/s** and its control rate stayed **1 kHz**. The numbers below count completed DAC writes in temporary instrumented builds; they do not establish evenly spaced sample intervals or audible quality.
+
+| Candidate | Updates in 5 s | Effective update rate | Decision |
+| --- | ---: | ---: | --- |
+| Previous release | 65,656 | 13,131/s | Comparison baseline |
+| Integer oscillator phases, refreshed at control rate | 81,236 | 16,247/s | Retained |
+| Integer waveform blend added | 91,971 | 18,394/s | Retained |
+| Standard `O3` optimization added | 98,197 | 19,639/s | Retained |
+| Bounded audio rounding and LFO math added | 99,883 | 19,977/s | Retained |
+| RTP-MIDI compiled out for comparison | 107,318 | 21,464/s | Measurement only; RTP remains enabled |
+| Control rate reduced to 500 Hz | 100,074 | 20,015/s | Rejected; negligible gain with lower timing resolution |
+
+The retained changes move oscillator phases with 32-bit integer increments, calculate pitch bend, detune, vibrato, and glide increments at the existing 1 kHz control rate, blend waveform table values as integers, use bounded rounding for audio samples, and replace small-exponent LFO calculations with accurate polynomial/table approximations. A 100,000-case comparison found the integer waveform blend within **0.000116** of the previous normalized waveform; sine-table interpolation was within **0.000082** of `sin()` in a 100,000-phase comparison, and the small-exponent polynomial's maximum error over the two-semitone vibrato range was below **0.000000004**. Glide now receives phase-increment updates every millisecond; its audible behavior remains to be checked.
+
+A filter tangent lookup, drive-curve lookup, and one-step wavefold simplification showed no useful rate gain and were discarded. Two attempts to remove WiFiS3 UDP modem queries raised the benchmark but failed a real RTP invitation, so neither is in the release. The standard RTP path accepted control and data invitations, a test RTP note marked the Uno as **standalone sound** on the Pico, and an explicit patch sync returned to **Pico patch**. The clean optimized Uno sketch compiled and was uploaded. A browser note plus Status, VU, and Scope commands completed with the Pico reporting `connected: true`, `syncFailed: false`, `mode: pico`.
+
+**Open limit:** the demanding four-voice/all-effects case still produced about **19,977 updates/s**, below the **22,050/s** target. With RTP compiled out it reached about **21,464/s**, also below target. Connected RTP-MIDI and actual DAC interval timing have not been characterized, and the audio output circuit is still unbuilt. Do not describe 22.05 kHz as achieved under all loads. Further work needs cycle-level profiling and a real-time audio scheduling/network design that preserves RTP clock and MIDI latency. [Uno source](../QuarkWave_MIDI/QuarkWave_MIDI.ino).

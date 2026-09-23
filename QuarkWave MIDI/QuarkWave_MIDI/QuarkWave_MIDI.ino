@@ -1,3 +1,4 @@
+#pragma GCC optimize ("O3")  // Time-critical Uno synthesis and control code; no fast-math.
 /*  QuarkWave - Uno R4 WiFi Synth (MIDI controlled version)
    - Poly: 4 voices, unison 1..3 (per voice)
    - Osc: sine/tri/saw/square with morph
@@ -120,8 +121,9 @@ struct ADSR {
 struct Voice {
   bool active;
   uint8_t note;
-  float phase[MAX_UNISON], inc[MAX_UNISON];
-  float incTarget[MAX_UNISON];
+  // Q0.32 oscillator phase and control-rate phase increment.
+  uint32_t phase[MAX_UNISON], phaseStep[MAX_UNISON];
+  float inc[MAX_UNISON], incTarget[MAX_UNISON];
   uint8_t unison;
   float vel;
   ADSR eg;
@@ -209,6 +211,7 @@ static float bitcrushRateDiv = 1.0f;
 // Derived settings are refreshed by controlTick, never inside audioTick.
 static uint8_t bitcrushDiv = 1;
 static float bitcrushLevels = 32768.0f;
+static float bitcrushInverseLevels = 1.0f / 32768.0f;
 static uint8_t bitcrushHoldCtr = 0;
 static float bitcrushHeld = 0.0f;
 static float tremDepth = 0.0f;
@@ -251,6 +254,9 @@ inline float applyDriveFold(float x) {
   }
   return clampf(x, -1.0f, 1.0f);
 }
+inline int32_t audioRound(float x) {
+  return (int32_t)(x >= 0.0f ? x + 0.5f : x - 0.5f);
+}
 inline float applyBitcrush(float x) {
   if (bitcrushMix <= 0.001f) return x;
 
@@ -264,7 +270,7 @@ inline float applyBitcrush(float x) {
     bitcrushHeld = x;
   }
 
-  const float crushed = roundf(clampf(heldInput, -1.0f, 1.0f) * bitcrushLevels) / bitcrushLevels;
+  const float crushed = audioRound(clampf(heldInput, -1.0f, 1.0f) * bitcrushLevels) * bitcrushInverseLevels;
   return fastLerp(x, crushed, bitcrushMix);
 }
 inline float applyTremolo(float x) {
@@ -485,7 +491,7 @@ inline int8_t unisonPosition(uint8_t count, uint8_t index) {
 }
 inline void updateGlideAlpha() {
   glideTime = maxf(glideTime, 0.0f);
-  glideAlpha = (glideTime > 0.001f) ? expf(-1.0f / (SAMPLE_RATE * glideTime)) : 0.0f;
+  glideAlpha = (glideTime > 0.001f) ? expf(-1.0f / (CONTROL_RATE * glideTime)) : 0.0f;
 }
 
 // Wavetables
@@ -504,24 +510,36 @@ inline float wtReadSine(uint16_t idx) {
 inline float wtReadSaw(uint16_t idx) {
   return WT_SAW[idx] / 32767.0f;
 }
+inline float lfoSine(float phase) {
+  const float position = phase * WT_SIZE;
+  const uint16_t index = (uint16_t)position & (WT_SIZE - 1);
+  const float fraction = position - (uint16_t)position;
+  return fastLerp(WT_SINE[index], WT_SINE[(index + 1) & (WT_SIZE - 1)], fraction) * (1.0f / 32767.0f);
+}
+// Polynomial error is negligible for the modulation range (at most +/- 2 semitones).
+inline float smallExp(float x) {
+  const float x2 = x * x;
+  return 1.0f + x + x2 * (0.5f + x * (1.0f / 6.0f + x * (1.0f / 24.0f + x / 120.0f)));
+}
 
 // Morph is updated at the control rate; compute its segment and blend once.
 static uint8_t morphSegment = 0;
+static uint16_t morphBlendQ15 = 0;  // 0..32767 waveform blend
 static float morphBlend = 0.0f;
-inline float oscRead(const float ph) {
-  const uint16_t idx = ((uint16_t)(ph * WT_SIZE)) & (WT_SIZE - 1);
+inline int16_t oscReadQ15(uint8_t idx) {
+  const int32_t saw = WT_SAW[idx];
+  int32_t a, b;
   if (morphSegment == 1) {
-    const float saw = wtReadSaw(idx);
-    const float tri = (saw >= 0.0f) ? (2.0f * saw - 1.0f) : (2.0f * saw + 1.0f);
-    return fastLerp(tri, saw, morphBlend);
+    a = saw >= 0 ? 2 * saw - 32767 : 2 * saw + 32767;
+    b = saw;
+  } else if (morphSegment == 0) {
+    a = WT_SINE[idx];
+    b = saw >= 0 ? 2 * saw - 32767 : 2 * saw + 32767;
+  } else {
+    a = saw;
+    b = WT_SINE[idx] >= 0 ? 32767 : -32767;
   }
-  const float sine = wtReadSine(idx);
-  const float saw = wtReadSaw(idx);
-  if (morphSegment == 0) {
-    const float tri = (saw >= 0.0f) ? (2.0f * saw - 1.0f) : (2.0f * saw + 1.0f);
-    return fastLerp(sine, tri, morphBlend);
-  }
-  return fastLerp(saw, sine >= 0.0f ? 1.0f : -1.0f, morphBlend);
+  return (int16_t)(a + (((b - a) * morphBlendQ15) >> 15));
 }
 
 // ADSR
@@ -695,7 +713,7 @@ static void triggerVoiceNote(uint8_t note, uint8_t vel) {
     if (wasActive && glideTime > 0.001f) {
       v.incTarget[u] = newInc;
     } else {
-      v.phase[u] = 0.0f;
+      v.phase[u] = 0;
       v.inc[u] = newInc;
       v.incTarget[u] = newInc;
     }
@@ -1157,6 +1175,7 @@ void audioInit() {
     v.vel = 0.8f;
     for (uint8_t u = 0; u < MAX_UNISON; u++) {
       v.phase[u] = 0;
+      v.phaseStep[u] = 0;
       v.inc[u] = 0;
       v.incTarget[u] = 0;
     }
@@ -1186,11 +1205,17 @@ void audioInit() {
   nextCtrlAt = micros();
 }
 
-inline void glideTick(Voice& v) {
-  if (glideAlpha > 0.0f) {
-    const float k = glideAlpha;
-    for (uint8_t u = 0; u < v.unison; ++u)
-      v.inc[u] = v.incTarget[u] + (v.inc[u] - v.incTarget[u]) * k;
+// Keep pitch bend, vibrato, detune, and glide out of the per-sample loop.
+inline void updateVoicePhaseSteps(Voice& v) {
+  const float bend = pitchBendRatio * lfo2Ratio;
+  const float leftBend = bend / lfoDetuneRatio;
+  const float rightBend = bend * lfoDetuneRatio;
+  for (uint8_t u = 0; u < v.unison; ++u) {
+    if (glideAlpha > 0.0f)
+      v.inc[u] = v.incTarget[u] + (v.inc[u] - v.incTarget[u]) * glideAlpha;
+    const int8_t pos = unisonPosition(v.unison, u);
+    const float ratio = pos < 0 ? leftBend : (pos > 0 ? rightBend : bend);
+    v.phaseStep[u] = (uint32_t)(v.inc[u] * ratio * 4294967296.0f);
   }
 }
 
@@ -1209,9 +1234,6 @@ inline bool audioTick() {
   uint32_t now = micros();
   if ((int32_t)(now - nextSample) < 0) return false;
   scheduleNextSample();
-  const float bend = pitchBendRatio * lfo2Ratio;
-  const float leftBend = bend / lfoDetuneRatio;
-  const float rightBend = bend * lfoDetuneRatio;
   static const float invUnison[] = {0.0f, 1.0f, 0.5f, 1.0f / 3.0f};
 
 #if PER_VOICE_FILTER
@@ -1219,18 +1241,13 @@ inline bool audioTick() {
   for (auto& v : V) {
     if (!v.active && v.eg.env <= 0) continue;
 
-    glideTick(v);
-
-    float sum = 0.0f;
+    int32_t sampleSum = 0;
     const float invU = invUnison[v.unison];
     for (uint8_t u = 0; u < v.unison; ++u) {
-      const float s = oscRead(v.phase[u]);
-      const int8_t pos = unisonPosition(v.unison, u);
-      v.phase[u] += v.inc[u] * (pos < 0 ? leftBend : (pos > 0 ? rightBend : bend));
-      if (v.phase[u] >= 1.0f) v.phase[u] -= 1.0f;
-      sum += s;
+      sampleSum += oscReadQ15((uint8_t)(v.phase[u] >> 24));
+      v.phase[u] += v.phaseStep[u];
     }
-    sum *= invU;
+    const float sum = sampleSum * (invU / 32767.0f);
 
     adsrTick(v.eg);
 
@@ -1254,18 +1271,13 @@ inline bool audioTick() {
   for (auto& v : V) {
     if (!v.active && v.eg.env <= 0) continue;
 
-    glideTick(v);
-
-    float sum = 0.0f;
+    int32_t sampleSum = 0;
     const float invU = invUnison[v.unison];
     for (uint8_t u = 0; u < v.unison; ++u) {
-      const float s = oscRead(v.phase[u]);
-      const int8_t pos = unisonPosition(v.unison, u);
-      v.phase[u] += v.inc[u] * (pos < 0 ? leftBend : (pos > 0 ? rightBend : bend));
-      if (v.phase[u] >= 1.0f) v.phase[u] -= 1.0f;
-      sum += s;
+      sampleSum += oscReadQ15((uint8_t)(v.phase[u] >> 24));
+      v.phase[u] += v.phaseStep[u];
     }
-    sum *= invU;
+    const float sum = sampleSum * (invU / 32767.0f);
 
     adsrTick(v.eg);
     mix += sum * v.eg.env * v.vel;
@@ -1289,7 +1301,7 @@ inline bool audioTick() {
 
   // --- CHORUS (pre-delay)
 #if USE_CHORUS
-  chBuf[chW] = (int8_t)roundf(clampf(y, -1.0f, 1.0f) * 127.0f);
+  chBuf[chW] = (int8_t)audioRound(clampf(y, -1.0f, 1.0f) * 127.0f);
   const float t1 = chBuf[(chW + CH_BUF - chOffset1) & (CH_BUF - 1)] / 127.0f;
   const float t2 = chBuf[(chW + CH_BUF - chOffset2) & (CH_BUF - 1)] / 127.0f;
   chW = (chW + 1) & (CH_BUF - 1);
@@ -1310,7 +1322,7 @@ inline bool audioTick() {
     if (++dlyRateCounter >= DLY_RATE_DIV) {
       dlyRateCounter = 0;
       const float fbv = clampf(y + tap * dlyFb, -1.0f, 1.0f);
-      dlyBuf[dlyW] = (int8_t)roundf(fbv * 127.0f);
+      dlyBuf[dlyW] = (int8_t)audioRound(fbv * 127.0f);
       if (++dlyW >= DLY_SIZE) dlyW = 0;
     }
     y = y * (1.0f - dlyMix) + tap * dlyMix;
@@ -1327,7 +1339,7 @@ inline bool audioTick() {
 
   if (++scopeDecim >= (SAMPLE_RATE / 360)) {
     scopeDecim = 0;
-    scopeTrace[scopeWrite] = (int8_t)roundf(y * 127.0f);
+    scopeTrace[scopeWrite] = (int8_t)audioRound(y * 127.0f);
     scopeWrite = (uint8_t)((scopeWrite + 1) % 12);
   }
 
@@ -1724,7 +1736,8 @@ void resetToDefaults() {
         v.unison = 1;
         v.vel = 0.8f;
         for (uint8_t u = 0; u < MAX_UNISON; u++) {
-            v.phase[u] = 0.0f;
+            v.phase[u] = 0;
+            v.phaseStep[u] = 0;
             v.inc[u] = 0.0f;
             v.incTarget[u] = 0.0f;
         }
@@ -2006,6 +2019,7 @@ inline void controlTick() {
   const uint8_t bits = (uint8_t)constrain((int)roundf(bitcrushBits), 4, 16);
   bitcrushDiv = (uint8_t)constrain((int)roundf(bitcrushRateDiv), 1, 16);
   bitcrushLevels = (float)((uint32_t)1 << (bits - 1));
+  bitcrushInverseLevels = 1.0f / bitcrushLevels;
   tremPhaseStep = tremRateHz / SAMPLE_RATE;
   const float bpmUse = (tempoSrc == 1 ? bpmExt : bpmInt);
   const float delaySeconds = dlySync
@@ -2015,19 +2029,20 @@ inline void controlTick() {
 
   lfoPhase += (lfoRate * CTRL_DT);
   if (lfoPhase >= 1.0f) lfoPhase -= 1.0f;
-  const float lfo = sinf(2.0f * PI * lfoPhase);
-  lfoDetuneRatio = centsToRatio(unisonDetuneCents * lfoToDetune * lfo);
+  const float lfo = lfoSine(lfoPhase);
+  lfoDetuneRatio = lfoToDetune > 0.0f
+    ? smallExp(0.00057762265f * unisonDetuneCents * lfoToDetune * lfo) : 1.0f;
 
   // --- LFO2 (vibrato)
   lfo2Phase += (lfo2RateHz * CTRL_DT);
   if (lfo2Phase >= 1.0f) lfo2Phase -= 1.0f;
   float l2;
   switch (lfo2Wave) {
-    case LFO_TRI: l2 = 2.0f * fabsf(2.0f * (lfo2Phase - floorf(lfo2Phase + 0.5f))) - 1.0f; break;
+    case LFO_TRI: l2 = lfo2Phase < 0.5f ? 4.0f * lfo2Phase - 1.0f : 3.0f - 4.0f * lfo2Phase; break;
     case LFO_SQR: l2 = (lfo2Phase < 0.5f) ? 1.0f : -1.0f; break;
-    default: l2 = sinf(2.0f * PI * lfo2Phase); break;
+    default: l2 = lfoSine(lfo2Phase); break;
   }
-  lfo2Ratio = powf(2.0f, (lfo2AmtSemi * l2) / 12.0f);
+  lfo2Ratio = smallExp(0.057762265f * lfo2AmtSemi * l2);
 
   // --- Step smoothers
   smCutoff.step();
@@ -2091,6 +2106,7 @@ inline void controlTick() {
   if (morph < 1.0f / 3.0f) { morphSegment = 0; morphBlend = morph * 3.0f; }
   else if (morph < 2.0f / 3.0f) { morphSegment = 1; morphBlend = (morph - 1.0f / 3.0f) * 3.0f; }
   else { morphSegment = 2; morphBlend = (morph - 2.0f / 3.0f) * 3.0f; }
+  morphBlendQ15 = (uint16_t)roundf(clampf(morphBlend, 0.0f, 1.0f) * 32767.0f);
   masterGain = clampf(smGain.y * (1.0f + 0.8f * lfoToAmp * lfo), 0.0f, 2.0f);
 
   // --- Glide / Detune updates
@@ -2102,6 +2118,10 @@ inline void controlTick() {
     unisonDetuneCents = smDetune.y;
     updateDetuneRatio();
   }
+
+  // Refresh phase increments at 1 kHz; the sample loop only advances integer phases.
+  for (auto& v : V)
+    if (v.active || v.eg.env > 0.0f) updateVoicePhaseSteps(v);
 
   // ===================== Arpeggiator =====================
   if (arpMode != 0) {

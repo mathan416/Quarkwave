@@ -1,7 +1,7 @@
 # QuarkWave MIDI documentation
 
 **Audience:** development testers using an assembled instrument, and developers extending it.  
-**Status:** source-reviewed, partial hardware check. These pages describe firmware behavior inspected on **2026-09-23**. Browser, USB, and targeted Uno timing checks have run on the two-board build. The audio output circuit and audible results remain untested.
+**Status:** source-reviewed, partial hardware check. These pages describe firmware behavior inspected on **2026-09-23**. Browser, USB, targeted Uno timing, and owner-observed LED matrix checks have run on the two-board build. The audio output circuit and audible results remain untested.
 
 ## Choose a guide
 

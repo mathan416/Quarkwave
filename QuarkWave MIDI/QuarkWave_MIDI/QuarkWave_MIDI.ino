@@ -53,6 +53,7 @@
 
 // --- Forward declarations so Arduino's auto-prototypes know these types ---
 struct Voice;
+struct ADSR;
 enum ArpMode : uint8_t;
 enum ClockInput : uint8_t;
 struct MidiClockState;
@@ -114,6 +115,7 @@ struct ADSR {
   float a, d, s, r, env;
   bool gate;
   bool decaying;
+  float aStep = 0.0f, dStep = 0.0f, rStep = 0.0f;
 };
 struct Voice {
   bool active;
@@ -204,11 +206,15 @@ inline void setPitchBend(int16_t v) {
 static float bitcrushMix = 0.0f;
 static float bitcrushBits = 16.0f;
 static float bitcrushRateDiv = 1.0f;
+// Derived settings are refreshed by controlTick, never inside audioTick.
+static uint8_t bitcrushDiv = 1;
+static float bitcrushLevels = 32768.0f;
 static uint8_t bitcrushHoldCtr = 0;
 static float bitcrushHeld = 0.0f;
 static float tremDepth = 0.0f;
 static float tremRateHz = 4.0f;
 static float tremPhase = 0.0f;
+static float tremPhaseStep = 4.0f / SAMPLE_RATE;
 static float driveAmount = 0.0f;
 static float foldAmount = 0.0f;
 
@@ -248,26 +254,23 @@ inline float applyDriveFold(float x) {
 inline float applyBitcrush(float x) {
   if (bitcrushMix <= 0.001f) return x;
 
-  const uint8_t bits = (uint8_t)constrain((int)roundf(bitcrushBits), 4, 16);
-  const uint8_t div = (uint8_t)constrain((int)roundf(bitcrushRateDiv), 1, 16);
   float heldInput = x;
-  if (div > 1) {
+  if (bitcrushDiv > 1) {
     if (bitcrushHoldCtr == 0) bitcrushHeld = x;
     heldInput = bitcrushHeld;
-    bitcrushHoldCtr = (uint8_t)((bitcrushHoldCtr + 1) % div);
+    if (++bitcrushHoldCtr >= bitcrushDiv) bitcrushHoldCtr = 0;
   } else {
     bitcrushHoldCtr = 0;
     bitcrushHeld = x;
   }
 
-  const float levels = (float)((uint32_t)1 << (bits - 1));
-  const float crushed = roundf(clampf(heldInput, -1.0f, 1.0f) * levels) / levels;
+  const float crushed = roundf(clampf(heldInput, -1.0f, 1.0f) * bitcrushLevels) / bitcrushLevels;
   return fastLerp(x, crushed, bitcrushMix);
 }
 inline float applyTremolo(float x) {
   if (tremDepth <= 0.001f) return x;
 
-  tremPhase += tremRateHz / SAMPLE_RATE;
+  tremPhase += tremPhaseStep;
   if (tremPhase >= 1.0f) tremPhase -= 1.0f;
   const float tri = (tremPhase < 0.5f) ? (tremPhase * 2.0f) : (2.0f - tremPhase * 2.0f);
   const float amp = 1.0f - tremDepth * tri;
@@ -280,14 +283,18 @@ static float cutoff = 2000.0f, resonance = 0.9f;
 static float noiseAmt = 0.0f;  // CC93
 
 // Delay
-// The delay line runs at half rate to cover a synced 1/16 note down to 40 BPM
-// without exhausting the Uno R4's RAM. Oscillators and filters remain full-rate.
-static const uint8_t DLY_RATE_DIV = 2;
-static const uint16_t DLY_SAMPLE_RATE = SAMPLE_RATE / DLY_RATE_DIV;
+// Keep the 8-bit delay line at 11,025 Hz regardless of the oscillator rate.
+// This covers a synced 1/16 note at 40 BPM within the Uno R4 RAM budget.
+// Oscillators and filters remain at SAMPLE_RATE.
+static const uint16_t DLY_SAMPLE_RATE = 11025;
+static_assert(SAMPLE_RATE % DLY_SAMPLE_RATE == 0, "Audio rate must divide the delay rate");
+static const uint8_t DLY_RATE_DIV = SAMPLE_RATE / DLY_SAMPLE_RATE;
 static const uint16_t DLY_SIZE = (DLY_SAMPLE_RATE * 3UL / 8UL) + 2;
 static int8_t dlyBuf[DLY_SIZE];
 static uint16_t dlyW = 0;
 static uint8_t dlyRateCounter = 0;
+// The selected tap changes at control rate; audioTick only reads the ring.
+static uint16_t dlyTapSamples = 1;
 static float dlyTime = 0.25f, dlyFb = 0.25f, dlyMix = 0.0f;
 
 // Each input has its own clock history; DIN wins while it is active.
@@ -498,28 +505,35 @@ inline float wtReadSaw(uint16_t idx) {
   return WT_SAW[idx] / 32767.0f;
 }
 
-// Osc morph
-inline float oscRead(const float ph, const float morph01) {
-  uint16_t idx = ((uint16_t)(ph * WT_SIZE)) & (WT_SIZE - 1);
-  float sine = wtReadSine(idx);
-  float saw = wtReadSaw(idx);
-
-  float tri = 2.0f * fabsf(saw) - 1.0f;
-  tri = (saw >= 0.0f) ? tri : -tri;
-
-  float sqr = (sine >= 0.0f) ? 1.0f : -1.0f;
-
-  float t = morph01;
-  if (t < 1.0f / 3.0f) return fastLerp(sine, tri, (t * 3.0f));
-  else if (t < 2.0f / 3.0f) return fastLerp(tri, saw, ((t - 1.0f / 3.0f) * 3.0f));
-  else return fastLerp(saw, sqr, ((t - 2.0f / 3.0f) * 3.0f));
+// Morph is updated at the control rate; compute its segment and blend once.
+static uint8_t morphSegment = 0;
+static float morphBlend = 0.0f;
+inline float oscRead(const float ph) {
+  const uint16_t idx = ((uint16_t)(ph * WT_SIZE)) & (WT_SIZE - 1);
+  if (morphSegment == 1) {
+    const float saw = wtReadSaw(idx);
+    const float tri = (saw >= 0.0f) ? (2.0f * saw - 1.0f) : (2.0f * saw + 1.0f);
+    return fastLerp(tri, saw, morphBlend);
+  }
+  const float sine = wtReadSine(idx);
+  const float saw = wtReadSaw(idx);
+  if (morphSegment == 0) {
+    const float tri = (saw >= 0.0f) ? (2.0f * saw - 1.0f) : (2.0f * saw + 1.0f);
+    return fastLerp(sine, tri, morphBlend);
+  }
+  return fastLerp(saw, sine >= 0.0f ? 1.0f : -1.0f, morphBlend);
 }
 
 // ADSR
-inline void adsrTick(struct ADSR& e, const float dt) {
+inline void updateAdsrSteps(ADSR& e) {
+  e.aStep = 1.0f / (SAMPLE_RATE * maxf(1e-5f, e.a));
+  e.dStep = 1.0f / (SAMPLE_RATE * maxf(1e-5f, e.d));
+  e.rStep = 1.0f / (SAMPLE_RATE * maxf(1e-5f, e.r));
+}
+inline void adsrTick(struct ADSR& e) {
   if (e.gate) {
     if (!e.decaying) {
-      e.env += dt / maxf(1e-5f, e.a);
+      e.env += e.aStep;
       if (e.env >= 1.0f) {
         e.env = 1.0f;
         e.decaying = true;
@@ -527,14 +541,14 @@ inline void adsrTick(struct ADSR& e, const float dt) {
     } else {
       const float sustain = clampf(e.s, 0.0f, 1.0f);
       if (e.env > sustain) {
-        e.env -= dt / maxf(1e-5f, e.d);
+        e.env -= e.dStep;
         if (e.env < sustain) e.env = sustain;
       } else if (e.env < sustain) {
         e.env = sustain;
       }
     }
   } else {
-    e.env -= dt / maxf(1e-5f, e.r);
+    e.env -= e.rStep;
     if (e.env < 0) e.env = 0;
   }
 }
@@ -1049,13 +1063,13 @@ void handleCC(uint8_t cc, uint8_t val) {
     case 72:
       {
         float t = t0;
-        for (auto& v : V) v.eg.r = 0.02f + 1.48f * t;
+        for (auto& v : V) { v.eg.r = 0.02f + 1.48f * t; updateAdsrSteps(v.eg); }
         break;
       }
     case 73:
       {
         float t = t0;
-        for (auto& v : V) v.eg.a = 0.002f + 0.498f * t;
+        for (auto& v : V) { v.eg.a = 0.002f + 0.498f * t; updateAdsrSteps(v.eg); }
         break;
       }
     case 74:
@@ -1066,7 +1080,7 @@ void handleCC(uint8_t cc, uint8_t val) {
     case 75:
       {
         float t = t0;
-        for (auto& v : V) v.eg.d = 0.01f + 0.99f * t;
+        for (auto& v : V) { v.eg.d = 0.01f + 0.99f * t; updateAdsrSteps(v.eg); }
         break;
       }
     case 76:
@@ -1138,6 +1152,7 @@ void audioInit() {
   for (auto& v : V) {
     v.active = false;
     v.eg = { 0.005f, 0.08f, 0.7f, 0.25f, 0.0f, false, false };
+    updateAdsrSteps(v.eg);
     v.unison = 1;
     v.vel = 0.8f;
     for (uint8_t u = 0; u < MAX_UNISON; u++) {
@@ -1194,9 +1209,9 @@ inline bool audioTick() {
   uint32_t now = micros();
   if ((int32_t)(now - nextSample) < 0) return false;
   scheduleNextSample();
-  const float dt = 1.0f / SAMPLE_RATE;
-
   const float bend = pitchBendRatio * lfo2Ratio;
+  const float leftBend = bend / lfoDetuneRatio;
+  const float rightBend = bend * lfoDetuneRatio;
   static const float invUnison[] = {0.0f, 1.0f, 0.5f, 1.0f / 3.0f};
 
 #if PER_VOICE_FILTER
@@ -1209,16 +1224,15 @@ inline bool audioTick() {
     float sum = 0.0f;
     const float invU = invUnison[v.unison];
     for (uint8_t u = 0; u < v.unison; ++u) {
-      const float s = oscRead(v.phase[u], morph);
+      const float s = oscRead(v.phase[u]);
       const int8_t pos = unisonPosition(v.unison, u);
-      const float spreadMod = pos < 0 ? (1.0f / lfoDetuneRatio) : (pos > 0 ? lfoDetuneRatio : 1.0f);
-      v.phase[u] += v.inc[u] * bend * spreadMod;
+      v.phase[u] += v.inc[u] * (pos < 0 ? leftBend : (pos > 0 ? rightBend : bend));
       if (v.phase[u] >= 1.0f) v.phase[u] -= 1.0f;
       sum += s;
     }
     sum *= invU;
 
-    adsrTick(v.eg, dt);
+    adsrTick(v.eg);
 
     const float vo = v.svf.process(sum) * v.eg.env * v.vel;
     y += vo;
@@ -1245,16 +1259,15 @@ inline bool audioTick() {
     float sum = 0.0f;
     const float invU = invUnison[v.unison];
     for (uint8_t u = 0; u < v.unison; ++u) {
-      const float s = oscRead(v.phase[u], morph);
+      const float s = oscRead(v.phase[u]);
       const int8_t pos = unisonPosition(v.unison, u);
-      const float spreadMod = pos < 0 ? (1.0f / lfoDetuneRatio) : (pos > 0 ? lfoDetuneRatio : 1.0f);
-      v.phase[u] += v.inc[u] * bend * spreadMod;
+      v.phase[u] += v.inc[u] * (pos < 0 ? leftBend : (pos > 0 ? rightBend : bend));
       if (v.phase[u] >= 1.0f) v.phase[u] -= 1.0f;
       sum += s;
     }
     sum *= invU;
 
-    adsrTick(v.eg, dt);
+    adsrTick(v.eg);
     mix += sum * v.eg.env * v.vel;
 
     if (!v.eg.gate && v.eg.env <= 0) v.active = false;
@@ -1291,21 +1304,14 @@ inline bool audioTick() {
 
   // --- DELAY
   if (dlyMix > 0.001f) {
-    uint16_t dlySamp;
-    if (dlySync) {
-      const float bpmUse = (tempoSrc == 1 ? bpmExt : bpmInt);
-      const float synced = maxf(0.01f, (60.0f / maxf(1.0f, bpmUse)) / 4.0f);  // 1/16
-      dlySamp = (uint16_t)constrain((int)(synced * DLY_SAMPLE_RATE), 1, (int)DLY_SIZE - 1);
-    } else {
-      dlySamp = (uint16_t)constrain((int)(dlyTime * DLY_SAMPLE_RATE), 1, (int)DLY_SIZE - 1);
-    }
-    const uint16_t dlyR = (uint16_t)((dlyW + DLY_SIZE - dlySamp) % DLY_SIZE);
+    const uint16_t dlyR = dlyW >= dlyTapSamples
+      ? dlyW - dlyTapSamples : dlyW + DLY_SIZE - dlyTapSamples;
     const float tap = dlyBuf[dlyR] / 127.0f;
     if (++dlyRateCounter >= DLY_RATE_DIV) {
       dlyRateCounter = 0;
       const float fbv = clampf(y + tap * dlyFb, -1.0f, 1.0f);
       dlyBuf[dlyW] = (int8_t)roundf(fbv * 127.0f);
-      dlyW = (uint16_t)((dlyW + 1) % DLY_SIZE);
+      if (++dlyW >= DLY_SIZE) dlyW = 0;
     }
     y = y * (1.0f - dlyMix) + tap * dlyMix;
   }
@@ -1607,6 +1613,7 @@ void resetToDefaults() {
         v.eg.d = 0.08f;    // Decay  
         v.eg.s = 0.7f;     // Sustain
         v.eg.r = 0.25f;    // Release
+        updateAdsrSteps(v.eg);
     }
     
     // === Oscillator ===
@@ -1996,7 +2003,14 @@ inline void controlTick() {
   if (externalTransportRunning) externalBeatPosition += (bpmExt / 60.0f) * CTRL_DT;
   // --- LFO1 (modulation)
   float lfoRate = lfoRateHz;
+  const uint8_t bits = (uint8_t)constrain((int)roundf(bitcrushBits), 4, 16);
+  bitcrushDiv = (uint8_t)constrain((int)roundf(bitcrushRateDiv), 1, 16);
+  bitcrushLevels = (float)((uint32_t)1 << (bits - 1));
+  tremPhaseStep = tremRateHz / SAMPLE_RATE;
   const float bpmUse = (tempoSrc == 1 ? bpmExt : bpmInt);
+  const float delaySeconds = dlySync
+    ? maxf(0.01f, 15.0f / maxf(1.0f, bpmUse)) : dlyTime;
+  dlyTapSamples = (uint16_t)constrain((int)(delaySeconds * DLY_SAMPLE_RATE), 1, (int)DLY_SIZE - 1);
   if (lfoSync && bpmUse > 1.0f) lfoRate = bpmUse / 60.0f;
 
   lfoPhase += (lfoRate * CTRL_DT);
@@ -2074,6 +2088,9 @@ inline void controlTick() {
 
   // --- Mini mod-matrix
   morph = clampf(smMorph.y + lfo * lfoToMorph, 0.0f, 1.0f);
+  if (morph < 1.0f / 3.0f) { morphSegment = 0; morphBlend = morph * 3.0f; }
+  else if (morph < 2.0f / 3.0f) { morphSegment = 1; morphBlend = (morph - 1.0f / 3.0f) * 3.0f; }
+  else { morphSegment = 2; morphBlend = (morph - 2.0f / 3.0f) * 3.0f; }
   masterGain = clampf(smGain.y * (1.0f + 0.8f * lfoToAmp * lfo), 0.0f, 2.0f);
 
   // --- Glide / Detune updates

@@ -96,3 +96,18 @@ The owner supplied a [live photograph](led-display-guide.md) of the Uno R4 WiFi 
 - Restored full scrolling labels for Status, VU, Scope, and RTP connection. Each frame is drawn during the normal LED update slot; MIDI and audio continue during the animation.
 - A temporary timing build showed **Viz: VU** moving from x=6 through x=-34 while a held browser note maintained a pre-DAC level around 0.09–0.11. It counted about 19,700 audio updates/s during the scroll, matching an instrumented build of the previous stationary-label firmware. The diagnostic itself changes the measured rate, so this comparison does not establish the release audio sample rate.
 - The clean scrolling build compiled and was installed on the Uno. The unbuilt audio output remains untested. [Uno matrix code](../QuarkWave_MIDI/QuarkWave_MIDI.ino).
+
+## Four-voice audio stress and optimization — 2026-09-23
+
+A temporary Uno build counted successful DAC updates over a five-second window after boot and Pico patch sync. It triggered four held notes (48, 55, 60, 64) directly in the Uno engine at velocity 100. The effects stress used chorus mix, bitcrush mix, tremolo depth, drive, fold, and delay mix at 1.0, bitcrush at 4 bits with 16-sample hold, delay feedback 0.8, and tempo-synced delay. The current Pico boot patch supplied other settings. The same counter and test sequence were used for the before-and-after comparison; diagnostic builds are not calibrated DAC interval measurements.
+
+| Build and load | Updates in 5 s | Effective update rate |
+| --- | ---: | ---: |
+| Previous firmware · four voices × three unison · all stress effects | 44,220 | 8,844/s |
+| Optimized firmware · four voices × three unison · all stress effects | 65,656 | 13,131/s |
+| Optimized firmware · four voices × three unison · effects off | 73,596 | 14,719/s |
+| Optimized firmware · four voices × one oscillator · all stress effects | 95,761 | 19,152/s |
+
+The full-load improvement is about 48%, but every measured load above remains below the 22,050-updates/s target. The largest remaining cost is twelve active oscillators; all-effects processing also consumes time. The firmware still requests 22,050 updates/s and drops overdue work after a long block. These figures do not claim an achieved 22.05 kHz output during the stress test.
+
+The release change keeps the delay's 8-bit, 11,025 Hz ring so its maximum synced time and current sound resolution are retained. A fixed delay rate also prevents its RAM use from growing with a future oscillator-rate change. A separate 44.1 kHz compile now fits RAM, whereas the prior source failed to link; this is a compile-only check, and the measured CPU load does not support changing the deployed rate. The tap length, envelope increments, waveform morph segment, bitcrush settings, and tremolo step now avoid redundant per-sample calculations; ring wrap uses a comparison instead of division. Waveform blend and delay ring arithmetic were checked against the previous equations over 100,000 morph cases and ring endpoints. The clean 22.05 kHz Uno sketch compiled, was uploaded, and the Pico reported `connected: true`, `syncFailed: false`, `mode: pico`; a brief browser note test completed. The line-output circuit is unbuilt, so audible quality and DAC timing remain unverified. [Uno source](../QuarkWave_MIDI/QuarkWave_MIDI.ino).

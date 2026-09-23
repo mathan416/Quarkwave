@@ -164,7 +164,6 @@ inline void touchRtpRx() {
 volatile bool bleOK = false;
 #endif
 
-static uint32_t wifiPipHoldUntil = 0, rtpPipHoldUntil = 0;
 static uint32_t uartRxPipHoldUntil = 0;
 inline void touchUartRx() {
   uartRxPipHoldUntil = millis() + 200;
@@ -417,6 +416,8 @@ uint8_t ledBuf[8][12];
 volatile uint32_t ledCanary = 0xCAFEBABE;
 
 static uint32_t noteBlinkUntil = 0;
+static uint32_t voiceStealPipHoldUntil = 0;
+static uint32_t audioSlipPipHoldUntil = 0;
 enum VizMode : uint8_t { VIZ_STATUS = 0,
                          VIZ_VU = 1,
                          VIZ_SCOPE = 2 } vizMode = VIZ_STATUS;
@@ -667,6 +668,7 @@ int8_t allocVoice() {
     if (!V[i].active || (!V[i].eg.gate && V[i].eg.env <= 0.0005f))
       return i;
 
+  voiceStealPipHoldUntil = millis() + 400;
   if (stealMode == STEAL_LAST) {
     uint32_t best = 0;
     int8_t idx = 0;
@@ -1379,36 +1381,26 @@ inline bool audioTick() {
 
 // ---------- LED visualizers ----------
 static inline void drawTopPips() {
-#if USE_WIFI_STACK
-  if (wifiOK) wifiPipHoldUntil = millis() + 1000;
-  if (rtpOK) rtpPipHoldUntil = millis() + 1000;
-  const bool showWiFi = wifiOK || (int32_t)(millis() - wifiPipHoldUntil) < 0;
-  const bool showRTP = rtpOK || (int32_t)(millis() - rtpPipHoldUntil) < 0;
-#else
-  const bool showWiFi = false, showRTP = false;
-#endif
-
-  for (int c = 0; c < 3; ++c) ledBuf[0][c] = showWiFi ? 1 : 0;
-
-#if USE_BLE_MIDI
-  updateBLEStatus();
-  static uint32_t blePipHoldUntil = 0;
-  if (bleOK) blePipHoldUntil = millis() + 1000;
-  const bool showBLE = bleOK || (int32_t)(millis() - blePipHoldUntil) < 0;
-  ledBuf[0][3] = showBLE ? 1 : 0;
-#else
-  ledBuf[0][3] = 0;
-#endif
-
-  ledBuf[0][4] = showRTP ? 1 : 0;
-
+  const uint32_t now = millis();
+  const bool clockLocked = tempoSrc == 1 && selectedClock != CLOCK_NONE &&
+      ((selectedClock == CLOCK_DIN && dinClock.valid &&
+        (uint32_t)(micros() - dinClock.lastPulseUs) <= CLOCK_TIMEOUT_US) ||
+       (selectedClock == CLOCK_RTP && rtpClock.valid &&
+        (uint32_t)(micros() - rtpClock.lastPulseUs) <= CLOCK_TIMEOUT_US));
+  ledBuf[0][0] = picoPatchApplied ? 1 : 0;
+  ledBuf[0][1] = standaloneTouched ? 1 : 0;
+  ledBuf[0][2] = clockLocked ? 1 : 0;
+  ledBuf[0][3] = sustainOn ? 1 : 0;
+  ledBuf[0][4] = arpMode != ARP_OFF ? 1 : 0;
   const bool showUART = picoLinkActive();
-  const bool showUARTRX = (int32_t)(millis() - uartRxPipHoldUntil) < 0;
+  const bool showUARTRX = (int32_t)(now - uartRxPipHoldUntil) < 0;
   ledBuf[0][5] = showUART ? 1 : 0;
   ledBuf[0][6] = showUARTRX ? 1 : 0;
-
-  const bool showRTPRX = (int32_t)(millis() - rtpRxPipHoldUntil) < 0;
+  ledBuf[0][7] = (int32_t)(now - voiceStealPipHoldUntil) < 0;
+  const bool showRTPRX = (int32_t)(now - rtpRxPipHoldUntil) < 0;
   ledBuf[0][8] = showRTPRX ? 1 : 0;
+  ledBuf[0][9] = (int32_t)(now - noteBlinkUntil) < 0;
+  ledBuf[0][10] = (int32_t)(now - audioSlipPipHoldUntil) < 0;
 }
 
 void ledsClear() {
@@ -1454,10 +1446,6 @@ void ledsWarmupComet() {
 
 void ledsStatusMeters() {
   ledsClear();
-  if ((int32_t)(millis() - noteBlinkUntil) < 0) {
-    ledBuf[0][9] = 1;
-  }
-
   for (int i = 0; i < NUM_VOICES; ++i) {
     const int row = 3 + i;
     const float lvl = clampf(V[i].eg.env, 0.0f, 1.0f);
@@ -2326,6 +2314,7 @@ void loop() {
   // of old audio after notes are released.
   const uint32_t audioNow = micros();
   if ((int32_t)(audioNow - nextSample) > 2000) {
+    audioSlipPipHoldUntil = now + 700;
     nextSample = audioNow;
     sampleRemainder = 0;
   }

@@ -6,7 +6,7 @@ The Uno R4 WiFi has a **12-column × 8-row red LED matrix**. It gives a quick vi
 
 ![Live Uno R4 WiFi showing several illuminated red matrix pixels along the top row, with its separate green ON light](images/uno-led-live.jpg)
 
-*Live photograph of the earlier Uno-network build. The current gateway build leaves Uno Wi-Fi and RTP-session pixels dark; the Pico handles those connections.*
+*Live photograph of the earlier Uno-network build. The current top row uses those former network positions for sound and performance status. The Pico handles Wi-Fi and RTP-MIDI connections.*
 
 ## Choose a view
 
@@ -28,25 +28,27 @@ The VU bars are **recent levels over time**. They are not frequency bands or ste
 
 Count columns **1–12 from left to right as viewed on the board**. The firmware draws these indicators on the top row in all three settled views. Boot and scrolling mode labels temporarily replace the view, including its top row. A pixel marked “brief” is expected to flash and go dark; it does not represent a persistent fault.
 
-![Numbered Uno LED top row showing disabled Uno network pixels, Pico link and receive, external sound activity, note, and heartbeat indicators](images/uno-led-top-row.svg)
+![Numbered Uno LED top row showing sound source, clock, sustain, arpeggiator, Pico link, MIDI activity, voice steal, audio timing, and heartbeat indicators](images/uno-led-top-row.svg)
 
-- **1–6:** `1–3` Uno Wi-Fi (off) · `4` BLE-MIDI (off) · `5` Uno RTP session (off) · `6` Pico link
-- **7–12:** `7` Pico MIDI RX · `8` unused · `9` external sound activity · `10` note · `11` unused · `12` heartbeat
+- **1–6:** `1` Pico sound loaded · `2` external MIDI used · `3` external clock active · `4` sustain · `5` arpeggiator enabled · `6` Pico link
+- **7–12:** `7` Pico MIDI RX · `8` voice stolen · `9` external sound activity · `10` note · `11` audio timing slip · `12` heartbeat
 
 | Column | Meaning in this build | When it lights |
 | ---: | --- | --- |
-| 1–3 | Uno Wi-Fi | Off: the Uno Wi-Fi stack is disabled; the optional Pico owns Wi-Fi. |
-| 4 | BLE-MIDI | Never in this build; BLE-MIDI is disabled. |
-| 5 | RTP-MIDI | Off: RTP sessions now terminate on the Pico, not the Uno. |
+| 1 | Pico sound loaded | The Uno acknowledged applying a Pico patch. This does not prove the sound is unchanged afterward. |
+| 2 | External MIDI used | A DIN or Pico-forwarded wireless note or sound control has been accepted since boot or the last Pico patch sync. Columns 1 and 2 can both be on. Clock alone does not light it. |
+| 3 | External clock active | External tempo is selected and a valid, recent DIN or Pico-forwarded RTP clock stream is the selected source. It goes dark when pulses stop for about two seconds; the last tempo is retained. Transport Start alone is not a valid clock stream. |
+| 4 | Sustain held | The Uno's sustain state is on. |
+| 5 | Arpeggiator enabled | An arpeggiator mode other than Off is selected. This does not mean it is currently stepping: transport may be stopped or no keys may be held. |
 | 6 | Pico link | While the Uno has received a Pico readiness request within roughly 3.5 seconds. This is a handshake indicator, not merely a powered UART. |
 | 7 | Pico MIDI receive, brief | For about 200 ms after the Uno handles a Pico UART note, sound control, Program Change, or SysEx. Pico readiness requests can flash this pixel even when nobody is playing. Clock and transport do not light it. |
-| 8 | Unused | Off. |
+| 8 | Voice stolen, brief | For about 400 ms when a new note needs a voice and all four are occupied. The Uno reuses one voice according to its selected voice-steal rule. |
 | 9 | External sound activity, brief | For about 300 ms after a DIN note, CC, or pitch bend, or a Pico-forwarded wireless activity marker, note, or sustain message. This shows activity, not an RTP connection. MIDI Clock and transport do not light it. A DIN sound Program Change or sound SysEx can change the sound without flashing this pixel. |
-| 10 | Note flash in Status view | For about 400 ms after a synth note starts. This flash is not drawn in VU or Scope. |
-| 11 | Unused | Off. |
+| 10 | Note started, brief | For about 400 ms after a synth note starts, in all three settled views. |
+| 11 | Audio timing slip, brief | For about 700 ms when the audio scheduler finds itself more than 2 ms behind and skips stale scheduled samples. This reports a scheduling event, not a measured DAC underrun count or an audible glitch. |
 | 12 | Heartbeat | Toggles about every 250 ms; a regular blink shows the display loop is updating. |
 
-The **bottom-right pixel** is a timing diagnostic. It can light for a frame if more than 200 ms elapsed between LED updates, such as after a blocking operation. An occasional flash alone does not identify its cause. [Top-row and diagnostic overlays](../QuarkWave_MIDI/QuarkWave_MIDI.ino).
+The **bottom-right pixel** is a separate display timing diagnostic. It can light for a frame if more than 200 ms elapsed between LED updates, such as after a blocking operation. It does not measure the audio scheduler; column 11 does that. An occasional flash alone does not identify its cause. [Top-row and diagnostic overlays](../QuarkWave_MIDI/QuarkWave_MIDI.ino).
 
 ## What happens at startup
 
@@ -56,7 +58,9 @@ The matrix first plays a boot animation and scrolls **QuarkWave**. The Uno no lo
 
 - **Heartbeat blinks, Pico pixel is dark:** the display loop is running, but the Uno has not received a recent Pico readiness request. Check the browser's separate Pico and Uno connection labels and the inter-board wiring. The Pico-to-Uno link can be offline while the Uno remains playable from its separate DIN input.
 - **Column 9 flashes:** a DIN sound message or Pico-forwarded wireless sound message arrived. Check the Pico's RTP connection label to distinguish wireless session status; column 9 by itself cannot do that.
-- **Wi-Fi group is dark:** expected in this build. Check the Pico or browser for network status; the Uno can still play through its separate DIN input, subject to its wiring.
+- **Column 8 flashes:** a fifth overlapping note needed one of the four voices; shorten releases or play fewer overlapping notes if this is unwanted.
+- **Column 11 flashes repeatedly:** the audio loop is falling behind its schedule. Try fewer voices or lighter effects and record the patch and playing conditions for a performance test. An isolated flash does not prove an audible glitch.
+- **Columns 1 and 2 are both lit:** the Pico loaded a sound, then external MIDI was used. Column 2 does not distinguish playing notes from changing sound controls.
 - **Voice bars move but VU seems still:** switch to VU and play again. Status follows individual voice envelopes; VU follows the final synthesized output. A new VU view starts with an empty history and fills as frames arrive.
 - **A mode label is scrolling:** wait for the text to cross the matrix and the selected view to resume. Keys remain playable during the scroll.
 

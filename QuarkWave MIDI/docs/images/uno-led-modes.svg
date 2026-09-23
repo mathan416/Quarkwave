@@ -1,10 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1120" height="430" viewBox="0 0 1120 430" role="img" aria-labelledby="title desc">
 <title id="title">Illustrative Uno LED matrix views</title>
-<desc id="desc">Status shows four horizontal voice envelope bars. The new VU view shows eleven vertical bars of recent mono output level with a peak dot in the twelfth column. Scope shows a waveform trace. The top row carries connection and heartbeat indicators.</desc>
+<desc id="desc">Status shows four horizontal voice envelope bars. VU shows eleven vertical bars of recent mono output level with a peak dot in the twelfth column. Scope shows a waveform trace. The top row carries sound, performance, connection, timing, and heartbeat indicators; a note-start flash can appear in any view.</desc>
 <style>.head{font:700 26px system-ui,sans-serif;fill:#f4f7fb}.sub{font:15px system-ui,sans-serif;fill:#b9c9d8}.section{font:700 20px system-ui,sans-serif;fill:#f4f7fb}.detail{font:15px system-ui,sans-serif;fill:#c8d4df}.foot{font:14px system-ui,sans-serif;fill:#d2dbe4}</style>
 <rect width="1120" height="430" rx="22" fill="#0b1728"/>
 <text x="42" y="47" class="head">Uno R4 LED matrix views</text>
-<text x="42" y="75" class="sub">Same 12×8 display · top row carries connection, activity, and heartbeat indicators</text>
+<text x="42" y="75" class="sub">Same 12×8 display · top row carries sound, performance, link, and timing indicators</text>
 <g transform="translate(40,0)"><rect x="0" y="104" width="340" height="244" rx="16" fill="#142a3b" stroke="#589bb5" stroke-width="2"/><text x="20" y="135" class="section">Status</text><rect x="20" y="150" width="300" height="156" rx="8" fill="#111925" stroke="#7388a3"/>
 <circle cx="37" cy="163.0" r="5.6" fill="#39485b"/>
 <circle cx="61" cy="163.0" r="5.6" fill="#39485b"/>

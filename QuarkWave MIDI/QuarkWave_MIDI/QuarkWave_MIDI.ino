@@ -600,9 +600,15 @@ inline void setFilterEnabled(bool on) {
 
 // Sustain
 static bool sustainOn = false;
+static uint8_t sustainOwners = 0;
 static bool heldNotes[128] = { false };
 static uint8_t heldVelocity[128] = { 0 };
 static bool sustainLatch[128] = { false };
+// The Pico UART carries both browser notes and forwarded RTP notes. Keep
+// independent ownership so a wireless disconnect cannot release a DIN or
+// browser note of the same pitch.
+enum NoteInput : uint8_t { NOTE_PICO = 1, NOTE_DIN = 2, NOTE_RTP = 4 };
+static uint8_t noteOwners[128] = { 0 };
 
 enum ArpMode : uint8_t { ARP_OFF = 0,
                          ARP_UP = 1,
@@ -781,6 +787,18 @@ void synthNoteOff(uint8_t note) {
   releaseVoiceNote(note);
 }
 
+static void inputNoteOn(uint8_t input, uint8_t note, uint8_t velocity) {
+  if (note >= 128 || velocity == 0) return;
+  noteOwners[note] |= input;
+  synthNoteOn(note, velocity);
+}
+
+static void inputNoteOff(uint8_t input, uint8_t note) {
+  if (note >= 128 || !(noteOwners[note] & input)) return;
+  noteOwners[note] &= (uint8_t)~input;
+  if (noteOwners[note] == 0) synthNoteOff(note);
+}
+
 static bool clockRecent(const MidiClockState& clock, uint32_t nowUs) {
   return (clock.valid && (uint32_t)(nowUs - clock.lastPulseUs) <= CLOCK_TIMEOUT_US) ||
          (clock.transportUs != 0 &&
@@ -912,11 +930,18 @@ void sustainSet(bool on) {
   }
 }
 
+static void inputSustain(uint8_t input, bool on) {
+  if (on) sustainOwners |= input;
+  else sustainOwners &= (uint8_t)~input;
+  sustainSet(sustainOwners != 0);
+}
+
 // CC map
 void allNotesOff() {
   for (auto& v : V) { v.eg.gate = false; }
   resetArpState(false);
   memset(heldNotes, 0, sizeof(heldNotes));
+  memset(noteOwners, 0, sizeof(noteOwners));
   memset(heldVelocity, 0, sizeof(heldVelocity));
   memset(sustainLatch, 0, sizeof(sustainLatch));
 }
@@ -925,12 +950,14 @@ void allSoundOff() {
   silenceVoicesImmediately();
   resetArpState(false);
   memset(heldNotes, 0, sizeof(heldNotes));
+  memset(noteOwners, 0, sizeof(noteOwners));
   memset(heldVelocity, 0, sizeof(heldVelocity));
   memset(sustainLatch, 0, sizeof(sustainLatch));
   memset(dlyBuf, 0, sizeof(dlyBuf));
   dlyW = 0;
   dlyRateCounter = 0;
   sustainOn = false;
+  sustainOwners = 0;
 }
 
 void handleCC(uint8_t cc, uint8_t val) {
@@ -1717,6 +1744,7 @@ void resetToDefaults() {
     // === System ===
     allNotesOff();  // Stop all playing notes
     sustainOn = false;
+    sustainOwners = 0;
     memset(heldNotes, 0, sizeof(heldNotes));
     memset(sustainLatch, 0, sizeof(sustainLatch));
     
@@ -1810,15 +1838,17 @@ void setupPICO() {
   });
   PICO_MIDI.setHandleControlChange([](byte, byte cc, byte val) {
       touchUartRx();
-      handleCC(cc, val);
+      if (cc == 64) inputSustain(NOTE_PICO, val >= 64);
+      else handleCC(cc, val);
   });
   PICO_MIDI.setHandleNoteOn([](byte, byte note, byte vel) {
       touchUartRx();
-      synthNoteOn(note, vel);
+      if (vel) inputNoteOn(NOTE_PICO, note, vel);
+      else inputNoteOff(NOTE_PICO, note);
   });
   PICO_MIDI.setHandleNoteOff([](byte, byte note, byte) {
       touchUartRx();
-      synthNoteOff(note);
+      inputNoteOff(NOTE_PICO, note);
   });
   PICO_MIDI.setHandlePitchBend([](byte, int bend) {
       touchUartRx();
@@ -1831,6 +1861,25 @@ void setupPICO() {
         sysex[2] == 0x00 && sysex[3] == 0x14 && sysex[4] == 0xF7) {
       touchRtpRx();
       markStandaloneActivity();
+      return;
+    }
+    // A Pico-forwarded wireless note carries its own input identity. The
+    // final release uses the normal envelope, including sustain behavior.
+    if (sysex && size == 8 && sysex[0] == 0xF0 && sysex[1] == 0x7D &&
+        sysex[2] == 0x00 && sysex[3] == 0x15 && sysex[7] == 0xF7 &&
+        sysex[4] <= 1 && sysex[5] < 128 && sysex[6] < 128) {
+      touchRtpRx();
+      markStandaloneActivity();
+      if (sysex[4] == 0 && sysex[6] > 0) inputNoteOn(NOTE_RTP, sysex[5], sysex[6]);
+      else inputNoteOff(NOTE_RTP, sysex[5]);
+      return;
+    }
+    if (sysex && size == 6 && sysex[0] == 0xF0 && sysex[1] == 0x7D &&
+        sysex[2] == 0x00 && sysex[3] == 0x16 && sysex[4] <= 1 &&
+        sysex[5] == 0xF7) {
+      touchRtpRx();
+      markStandaloneActivity();
+      inputSustain(NOTE_RTP, sysex[4] != 0);
       return;
     }
     if (!sysex || size != 5 || sysex[0] != 0xF0 || sysex[1] != 0x7D ||
@@ -1857,17 +1906,19 @@ void setupDIN() {
   DIN_MIDI.setHandleNoteOn([](byte, byte n, byte v) {
     markStandaloneActivity();
     touchRtpRx();
-    synthNoteOn(n, v);
+    if (v) inputNoteOn(NOTE_DIN, n, v);
+    else inputNoteOff(NOTE_DIN, n);
   });
   DIN_MIDI.setHandleNoteOff([](byte, byte n, byte) {
     markStandaloneActivity();
     touchRtpRx();
-    synthNoteOff(n);
+    inputNoteOff(NOTE_DIN, n);
   });
   DIN_MIDI.setHandleControlChange([](byte, byte cc, byte v) {
     markStandaloneActivity();
     touchRtpRx();
-    handleCC(cc, v);
+    if (cc == 64) inputSustain(NOTE_DIN, v >= 64);
+    else handleCC(cc, v);
   });
   DIN_MIDI.setHandlePitchBend([](byte, int bend) {
     markStandaloneActivity();

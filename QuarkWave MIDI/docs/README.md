@@ -1,7 +1,7 @@
 # QuarkWave MIDI documentation
 
 **Audience:** development testers using an assembled instrument, and developers extending it.  
-**Status:** source-reviewed, partial hardware check. The Pico RTP gateway has passed a live invitation, note, standalone-state, and explicit-sync smoke check; clock timing and audio remain untested. These pages describe firmware behavior inspected on **2026-09-23**. Browser, USB, targeted Uno timing, and owner-observed LED matrix checks have run on the two-board build. The audio output circuit and audible results remain untested.
+**Status:** source-reviewed, partial hardware check. The Pico RTP gateway has passed a live invitation, note, disconnect-release, standalone-state, and explicit-sync smoke check; clock timing and audio remain untested. These pages describe firmware behavior inspected on **2026-09-23**. Browser, USB, targeted Uno timing, and owner-observed LED matrix checks have run on the two-board build. The audio output circuit and audible results remain untested.
 
 ## Choose a guide
 
@@ -25,8 +25,8 @@ The two sketches and embedded browser page are the source of truth for these pag
 
 | Component | Source | SHA-256 |
 | --- | --- | --- |
-| Uno R4 sound engine | [QuarkWave_MIDI.ino](../QuarkWave_MIDI/QuarkWave_MIDI.ino) | `66b968aa7746e6c14f81a4b5c0beb36b416dcf8db99a29e5e99e0051444014c8` |
-| Pico W web controller | [QuarkWave_UI_MIDI.ino](../QuarkWave_UI_MIDI/QuarkWave_UI_MIDI.ino) | `535940edd827898778f2d558949d797dfd99b89b7bc3f770072c62b3fec4d6fb` |
+| Uno R4 sound engine | [QuarkWave_MIDI.ino](../QuarkWave_MIDI/QuarkWave_MIDI.ino) | `5570b9c006e15311628caae8a5d174dca724a3d5ee6c3247e62e0b11c3d3a75b` |
+| Pico W web controller | [QuarkWave_UI_MIDI.ino](../QuarkWave_UI_MIDI/QuarkWave_UI_MIDI.ino) | `d417836d7293f2a92310ca3f9d98572b8f6d8407242c1f2be2a5398b21a05646` |
 | Embedded browser panel | [QuarkWave_UI.h](../QuarkWave_UI_MIDI/QuarkWave_UI.h) | `5283520cd7e50f82ae1d219fa9b139e2f965daf72e7f8e3d727f4d311f44d348` |
 
 The connected controller identified over USB on 2026-09-23 is a **Pico W (RP2040, 2 MB flash)**. Its deployed build uses a 1 MB LittleFS region to match the existing patch storage. The Uno identified as **Arduino UNO R4 WiFi**. Both uploads verified; the live panel showed **Pico: Connected** and **Uno: Connected · Pico patch** with the existing “Test Pluck” user patch. An automated browser pass exercised 50 control paths and 41 pointer keys, plus all 12 computer keys at three velocities. The Pico reported changes and the Uno handshake was initially connected, but the Uno does not acknowledge each sound command. A Pico return-message parser fix resolved the reproduced explicit-sync failure in repeated two-board tests. A temporary Uno diagnostic confirmed browser Note On, envelope movement, and a finite pre-DAC signal on one patch; audible output and per-control sound response remain unverified. See the [hardware test log](hardware-test-log.md).

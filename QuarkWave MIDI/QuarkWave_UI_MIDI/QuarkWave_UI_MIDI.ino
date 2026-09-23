@@ -22,6 +22,9 @@
 #include <LittleFS.h>
 #include <ArduinoJson.h>
 #include <MIDI.h>
+// The gateway tracks wireless note ownership for one controller session.
+// AppleMIDI's single-participant mode keeps disconnect cleanup unambiguous.
+#define ONE_PARTICIPANT
 #include <AppleMIDI.h>
 #include "QuarkWave_UI.h"
 #include "secrets.h"
@@ -42,7 +45,35 @@ static bool rtpConnected = false;
 static bool rtpSoundActivity = false;
 static bool rtpActivityReported = false;
 static uint32_t lastRtpMarkerMs = 0;
+// One bit per MIDI channel. The Uno is omni, so only the final wireless
+// release of a pitch is forwarded. This state is cleared on session loss.
+static uint16_t rtpHeldChannels[128] = { 0 };
+static uint16_t rtpSustainChannels = 0;
 void broadcastUnoStatus();
+
+static void sendRtpNote(uint8_t note, uint8_t velocity, bool on) {
+  const uint8_t message[] = {0xF0, 0x7D, 0x00, 0x15,
+                             (uint8_t)(on ? 0 : 1), note, velocity, 0xF7};
+  MIDI_UART.sendSysEx(sizeof(message), message, true);
+}
+
+static void sendRtpSustain(bool on) {
+  const uint8_t message[] = {0xF0, 0x7D, 0x00, 0x16,
+                             (uint8_t)(on ? 1 : 0), 0xF7};
+  MIDI_UART.sendSysEx(sizeof(message), message, true);
+}
+
+static void releaseRtpNotes() {
+  for (uint8_t note = 0; note < 128; ++note) {
+    if (!rtpHeldChannels[note]) continue;
+    rtpHeldChannels[note] = 0;
+    sendRtpNote(note, 0, false);
+  }
+  if (rtpSustainChannels) {
+    rtpSustainChannels = 0;
+    sendRtpSustain(false);
+  }
+}
 
 // The gateway accepts only QuarkWave's public sound commands, never link,
 // reset, or matrix-display commands from an external RTP peer.
@@ -80,16 +111,37 @@ static void setupRtpGateway() {
   rtpMIDI.begin(MIDI_CHANNEL_OMNI);
   rtpMIDI.turnThruOff();
   rtpMIDI.setHandleNoteOn([](byte channel, byte note, byte velocity) {
+    if (note >= 128 || channel < 1 || channel > 16) return;
     markRtpSoundActivity();
-    MIDI_UART.sendNoteOn(note, velocity, channel);
+    const uint16_t channelBit = (uint16_t)1u << (channel - 1);
+    if (velocity == 0) {
+      rtpHeldChannels[note] &= ~channelBit;
+      if (!rtpHeldChannels[note]) sendRtpNote(note, 0, false);
+    } else {
+      rtpHeldChannels[note] |= channelBit;
+      sendRtpNote(note, velocity, true);
+    }
   });
   rtpMIDI.setHandleNoteOff([](byte channel, byte note, byte velocity) {
+    if (note >= 128 || channel < 1 || channel > 16) return;
     markRtpSoundActivity();
-    MIDI_UART.sendNoteOff(note, velocity, channel);
+    const uint16_t channelBit = (uint16_t)1u << (channel - 1);
+    if (!(rtpHeldChannels[note] & channelBit)) return;
+    rtpHeldChannels[note] &= ~channelBit;
+    if (!rtpHeldChannels[note]) sendRtpNote(note, velocity, false);
   });
   rtpMIDI.setHandleControlChange([](byte channel, byte cc, byte value) {
     markRtpSoundActivity();
-    MIDI_UART.sendControlChange(cc, value, channel);
+    if (cc == 64 && channel >= 1 && channel <= 16) {
+      const bool wasHeld = rtpSustainChannels != 0;
+      const uint16_t channelBit = (uint16_t)1u << (channel - 1);
+      if (value >= 64) rtpSustainChannels |= channelBit;
+      else rtpSustainChannels &= ~channelBit;
+      if ((rtpSustainChannels != 0) != wasHeld)
+        sendRtpSustain(rtpSustainChannels != 0);
+    } else {
+      MIDI_UART.sendControlChange(cc, value, channel);
+    }
   });
   rtpMIDI.setHandlePitchBend([](byte channel, int bend) {
     markRtpSoundActivity();
@@ -115,6 +167,7 @@ static void setupRtpGateway() {
     broadcastUnoStatus();
   });
   ApplertpMIDI.setHandleDisconnected([](const APPLEMIDI_NAMESPACE::ssrc_t&) {
+    releaseRtpNotes();
     rtpConnected = false;
     Serial.println("[RTP] Controller disconnected from Pico");
     broadcastUnoStatus();
@@ -759,6 +812,10 @@ bool startUnoSync(bool explicitRequest) {
   unoSyncFailed = false;
   unoSyncRetries = 0;
   clearAllWsNotes();
+  // The Uno reset at the start of sync clears its input owners and pedal.
+  // Drop the matching wireless bookkeeping without sending redundant offs.
+  memset(rtpHeldChannels, 0, sizeof(rtpHeldChannels));
+  rtpSustainChannels = 0;
   broadcastUnoStatus();
   syncWithUno();
   lastUnoSyncMs = millis();

@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="500" viewBox="0 0 1120 500" role="img" aria-labelledby="title desc">
+<title id="title">Proposed isolated DIN MIDI IN for the Uno R4</title>
+<desc id="desc">A five-pin DIN MIDI IN jack uses pins four and five only for a current loop into a standards-compliant opto-isolated receiver. Its five-volt logic output goes to Uno D2, with five-volt power and ground on the Uno side of the isolation barrier. DIN pin two, shield, and pins one and three have no DC connection to Uno ground.</desc>
+<defs><marker id="signal" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="10" markerHeight="10" orient="auto"><path d="M1 1 L11 6 L1 11 Z" fill="#32bdd6"/></marker></defs>
+<style>.head{font:700 26px system-ui,sans-serif;fill:#f4f7fb}.sub{font:15px system-ui,sans-serif;fill:#b9c9d8}.boxhead{font:700 20px system-ui,sans-serif;fill:#f4f7fb}.pin{font:700 17px system-ui,sans-serif;fill:#f1f6fa}.small{font:14px system-ui,sans-serif;fill:#c8d4df}.foot{font:14px system-ui,sans-serif;fill:#d2dbe4}</style>
+<rect width="1120" height="500" rx="22" fill="#0b1728"/>
+<text x="42" y="47" class="head">Proposed Uno MIDI IN</text>
+<text x="42" y="75" class="sub">Unbuilt · opto-isolated 5-pin DIN interface · 31,250 baud, 8-N-1</text>
+<rect x="48" y="124" width="238" height="232" rx="16" fill="#142a3b" stroke="#589bb5" stroke-width="2"/>
+<text x="167" y="162" class="boxhead" text-anchor="middle">5-pin DIN female</text>
+<text x="167" y="193" class="small" text-anchor="middle">MIDI IN · 180°</text>
+<text x="262" y="240" class="pin" text-anchor="end">pin 4</text>
+<text x="262" y="299" class="pin" text-anchor="end">pin 5</text>
+<rect x="381" y="124" width="345" height="232" rx="16" fill="#242336" stroke="#ac90c7" stroke-width="2"/>
+<text x="554" y="162" class="boxhead" text-anchor="middle">Isolated MIDI IN receiver</text>
+<text x="554" y="192" class="small" text-anchor="middle">CA-033 compliant circuit or module</text>
+<text x="404" y="240" class="pin">loop +</text>
+<text x="404" y="299" class="pin">loop −</text>
+<path d="M560 207 V341" stroke="#b6a4d2" stroke-width="3" stroke-dasharray="8 6"/>
+<text x="569" y="335" class="small">isolation barrier</text>
+<text x="702" y="240" class="pin" text-anchor="end">TTL OUT</text>
+<text x="702" y="299" class="pin" text-anchor="end">5 V / GND</text>
+<rect x="818" y="124" width="254" height="232" rx="16" fill="#302a25" stroke="#d4a46d" stroke-width="2"/>
+<text x="945" y="162" class="boxhead" text-anchor="middle">Uno R4 WiFi</text>
+<text x="841" y="240" class="pin">D2 · MIDI RX</text>
+<text x="841" y="299" class="pin">5 V / GND</text>
+<path d="M286 258 H381 M286 317 H381" stroke="#32bdd6" stroke-width="4"/>
+<path d="M726 258 H818" stroke="#32bdd6" stroke-width="4" marker-end="url(#signal)"/>
+<path d="M726 317 H818" stroke="#7bd6a2" stroke-width="4"/>
+<text x="334" y="225" class="small" text-anchor="middle">isolated loop</text>
+<text x="770" y="225" class="small" text-anchor="middle">idle-high UART</text>
+<rect x="48" y="386" width="1024" height="74" rx="12" fill="#1a2a3e"/>
+<text x="67" y="414" class="foot">DIN pin 2 and shell: no DC path to Uno ground. Pins 1 and 3: unconnected.</text>
+<text x="67" y="441" class="foot">Select and verify the receiver circuit before wiring; Uno D3 is not a MIDI OUT jack.</text>
+</svg>

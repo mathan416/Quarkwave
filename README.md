@@ -2,15 +2,15 @@
 
 Quarkwave is a MIDI synthesizer built around two boards: an **Arduino Uno R4 WiFi** generates the sound, and a **Raspberry Pi Pico W** hosts the browser interface and stores patches. You can also play the Uno directly from an external MIDI controller. The MIDI version is the focus of current development.
 
-![Simulated Quarkwave Perform panel with the shared keyboard and patch controls](QuarkWave%20MIDI/docs/images/perform-simulated.png)
+![Live Quarkwave Perform panel with the shared keyboard and patch controls](QuarkWave%20MIDI/docs/images/perform-simulated.png)
 
-*The panel image is a simulated connected view. The [hardware test log](QuarkWave%20MIDI/docs/hardware-test-log.md) records what has been verified on the assembled boards.*
+*The panel image was captured from the connected Pico after the gateway upload. Audio remains unverified; see the [hardware test log](QuarkWave%20MIDI/docs/hardware-test-log.md).*
 
 ## Current status
 
 The browser panel, Pico–Uno MIDI handshake, and patch sync have been tested on the two-board setup. The Uno's `A0` audio output circuit has **not** been assembled, so audible sound and output levels remain unverified. The [connection guide](QuarkWave%20MIDI/docs/connection-guide.md) separates the current wiring from the proposed line and headphone circuits.
 
-The Pico serves the **Perform**, **Shape**, **Explore**, and **All controls** views at `http://quarkwave.local/` when it is connected to the configured network. The Uno is the sound engine; the Pico is the main interface, patch store, and controller. External DIN and RTP-MIDI support is described in the [external MIDI guide](QuarkWave%20MIDI/docs/external-midi-guide.md). RTP-MIDI is enabled in this build; BLE-MIDI is disabled.
+The Pico serves the **Perform**, **Shape**, **Explore**, and **All controls** views at `http://quarkwave.local/` when it is connected to the configured network. The Uno is the sound engine; the Pico is the main interface, patch store, and controller. The Uno accepts a separate physical MIDI input; the optional Pico receives RTP-MIDI over Wi-Fi and forwards it to the Uno. See the [external MIDI guide](QuarkWave%20MIDI/docs/external-midi-guide.md). BLE-MIDI is disabled.
 
 ## Start here
 
@@ -28,9 +28,9 @@ The [documentation index](QuarkWave%20MIDI/docs/README.md) lists every guide and
 
 The **All controls** tab puts the sound engine, modulation, effects, and Uno LED controls on one scrollable page.
 
-![Full-page simulated All controls view, from the patch strip and keyboard through sound shaping, effects, and LED matrix controls](QuarkWave%20MIDI/docs/images/all-controls-simulated.png)
+![Full-page All controls view, from the patch strip and keyboard through sound shaping, effects, and LED matrix controls](QuarkWave%20MIDI/docs/images/all-controls-simulated.png)
 
-*Full-page simulated panel capture. It shows the complete layout, not a live hardware result.*
+*Full-page capture from the connected Pico panel. It shows the controls and connection state, not measured audio output.*
 
 ## Project layout
 
@@ -45,7 +45,7 @@ QuarkWave/              Earlier non-MIDI sketches, kept for reference
 
 ## Local setup
 
-Both sketches use a local `secrets.h` for Wi-Fi settings. Git excludes these files. For each sketch you intend to build, copy its `secrets.example.h` to `secrets.h` in the same folder and replace the placeholder network name and password. Do not commit your filled-in `secrets.h`.
+Both sketches include a local `secrets.h`; only the Pico uses Wi-Fi in the current build. Git excludes these files. For each sketch you intend to build, copy its `secrets.example.h` to `secrets.h` in the same folder. Set the Pico's network name and password, and do not commit either filled-in file.
 
 The current development hardware uses separate USB power for the Uno and Pico, a shared ground, and level-shifted MIDI UART connections. The `A0` audio circuit, DIN input hardware, and headphone amplifier are not yet a completed build. Follow the [connection guide](QuarkWave%20MIDI/docs/connection-guide.md) and its verification notes before attaching audio equipment.
 

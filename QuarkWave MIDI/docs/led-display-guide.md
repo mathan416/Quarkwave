@@ -6,7 +6,7 @@ The Uno R4 WiFi has a **12-column × 8-row red LED matrix**. It gives a quick vi
 
 ![Live Uno R4 WiFi showing several illuminated red matrix pixels along the top row, with its separate green ON light](images/uno-led-live.jpg)
 
-*Live development build. The bright top-row pixels are a snapshot of indicators that can change within fractions of a second.*
+*Live photograph of the earlier Uno-network build. The current gateway build leaves Uno Wi-Fi and RTP-session pixels dark; the Pico handles those connections.*
 
 ## Choose a view
 
@@ -14,7 +14,7 @@ In the browser panel, open **Explore** or **All controls**, find **LED matrix**,
 
 ![Illustrative 12 by 8 LED matrices for Status, VU meter, and Scope](images/uno-led-modes.svg)
 
-*Illustrative frames, not captures. Lit pixels vary with network traffic, notes, waveform, and the heartbeat.*
+*Illustrative frames for the current gateway build, not captures. Lit pixels vary with Pico traffic, notes, waveform, and the heartbeat.*
 
 | View | What the lower rows show | Useful when |
 | --- | --- | --- |
@@ -28,20 +28,20 @@ In the browser panel, open **Explore** or **All controls**, find **LED matrix**,
 
 Count columns **1–12 from left to right as viewed on the board**. The firmware draws these indicators on the top row in all three views. A pixel marked “brief” is expected to flash and go dark; it does not represent a persistent fault.
 
-![Numbered Uno LED top row showing an illustrative lit state for Wi-Fi, RTP, Pico link and receive, note, and heartbeat indicators](images/uno-led-top-row.svg)
+![Numbered Uno LED top row showing Uno network pixels off and Pico link, receive, wireless activity, note, and heartbeat indicators](images/uno-led-top-row.svg)
 
-- **1–6:** `1–3` Wi-Fi · `4` BLE-MIDI · `5` RTP-MIDI · `6` Pico link
-- **7–12:** `7` Pico RX · `8` unused · `9` RTP RX · `10` note · `11` unused · `12` heartbeat
+- **1–6:** `1–3` Uno Wi-Fi (off) · `4` BLE-MIDI (off) · `5` Uno RTP session (off) · `6` Pico link
+- **7–12:** `7` Pico RX · `8` unused · `9` forwarded RTP activity · `10` note · `11` unused · `12` heartbeat
 
 | Column | Meaning in this build | When it lights |
 | ---: | --- | --- |
-| 1–3 | Uno Wi-Fi | Together while the Uno Wi-Fi stack reports connected. |
+| 1–3 | Uno Wi-Fi | Off: the Uno Wi-Fi stack is disabled; the optional Pico owns Wi-Fi. |
 | 4 | BLE-MIDI | Never in this build; BLE-MIDI is disabled. |
-| 5 | RTP-MIDI | While an RTP session reports connected. |
+| 5 | RTP-MIDI | Off: RTP sessions now terminate on the Pico, not the Uno. |
 | 6 | Pico link | While the Uno has received a Pico readiness request within roughly 3.5 seconds. This is a handshake indicator, not merely a powered UART. |
 | 7 | Pico UART receive, brief | For about 200 ms after a MIDI message arrives from the Pico. |
 | 8 | Unused | Off. |
-| 9 | RTP receive, brief | For about 300 ms after the Uno receives RTP MIDI activity. |
+| 9 | RTP receive, brief | For about 300 ms after the Uno receives the Pico gateway's wireless sound-activity marker. Clock pulses alone do not light it. |
 | 10 | Note flash in Status view | For about 400 ms after a synth note starts. This flash is not drawn in VU or Scope. |
 | 11 | Unused | Off. |
 | 12 | Heartbeat | Toggles about every 250 ms; a regular blink shows the display loop is updating. |
@@ -50,12 +50,12 @@ The **bottom-right pixel** is a timing diagnostic. It can light for a frame if m
 
 ## What happens at startup
 
-The matrix first plays a boot animation and scrolls **QuarkWave**. While Wi-Fi starts, a two-pixel “comet” moves across the fourth row. The Uno then scrolls its IP address or **No WiFi**. An RTP connection scrolls **RTP Connected**. Changing the display view scrolls **Viz: Status**, **Viz: VU**, or **Viz: Scope**. The selected view resumes after the text finishes crossing the matrix and a brief hold. Note processing continues during the scroll. [Boot animation](../QuarkWave_MIDI/QuarkWave_MIDI.ino), [Wi-Fi display](../QuarkWave_MIDI/QuarkWave_MIDI.ino), [RTP notification](../QuarkWave_MIDI/QuarkWave_MIDI.ino).
+The matrix first plays a boot animation and scrolls **QuarkWave**. The Uno no longer starts Wi-Fi or scrolls an IP address or RTP connection label; the optional Pico owns those network functions. Changing the display view scrolls **Viz: Status**, **Viz: VU**, or **Viz: Scope**. The selected view resumes after the text finishes crossing the matrix and a brief hold. Note processing continues during the scroll. [Boot animation and view labels](../QuarkWave_MIDI/QuarkWave_MIDI.ino).
 
 ## Quick checks
 
-- **Heartbeat blinks, Pico pixel is dark:** the display loop is running, but the Uno has not received a recent Pico readiness request. Check the browser's separate Pico and Uno connection labels and the inter-board wiring. The Pico-to-Uno link can be offline even while Uno Wi-Fi is connected.
-- **Wi-Fi group is dark:** the Uno firmware does not currently report Wi-Fi connected. It can still play from its other available MIDI inputs, subject to their wiring.
+- **Heartbeat blinks, Pico pixel is dark:** the display loop is running, but the Uno has not received a recent Pico readiness request. Check the browser's separate Pico and Uno connection labels and the inter-board wiring. The Pico-to-Uno link can be offline while the Uno remains playable from its separate DIN input.
+- **Wi-Fi group is dark:** expected in this build. Check the Pico or browser for network status; the Uno can still play through its separate DIN input, subject to its wiring.
 - **Voice bars move but VU seems still:** switch to VU and play again. Status follows individual voice envelopes; VU follows the final synthesized output, so they are not identical.
 - **A mode label is scrolling:** wait for the text to cross the matrix and the selected view to resume. Keys remain playable during the scroll.
 

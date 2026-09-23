@@ -1,7 +1,7 @@
 # QuarkWave MIDI documentation
 
 **Audience:** development testers using an assembled instrument, and developers extending it.  
-**Status:** source-reviewed, partial hardware check. These pages describe firmware behavior inspected on **2026-09-23**. Browser, USB, targeted Uno timing, and owner-observed LED matrix checks have run on the two-board build. The audio output circuit and audible results remain untested.
+**Status:** source-reviewed, partial hardware check. The Pico RTP gateway has passed a live invitation, note, standalone-state, and explicit-sync smoke check; clock timing and audio remain untested. These pages describe firmware behavior inspected on **2026-09-23**. Browser, USB, targeted Uno timing, and owner-observed LED matrix checks have run on the two-board build. The audio output circuit and audible results remain untested.
 
 ## Choose a guide
 
@@ -13,11 +13,11 @@
 - [External MIDI controllers](external-midi-guide.md) — play the Uno alone, send clock, and use its supported sound commands.
 - [Technical guide](technical-guide.md) — board roles, signal flow, WebSocket and MIDI messages, patch files, and firmware behavior.
 - [Diagram style](diagram-style.md) — visual conventions for maintaining the guide figures.
-- [Connection guide](connection-guide.md) — photographs of the current USB-powered build, known board wiring, and proposed line and TDA1308 headphone connections.
+- [Connection guide](connection-guide.md) — photographs of the current USB-powered build, known board wiring, and proposed isolated DIN, line, and TDA1308 headphone connections.
 - [Hardware test log](hardware-test-log.md) — repeatable checks and space for measured results.
 - [Documentation gaps](documentation-gaps.md) — source discrepancies and tasks that need a product decision or hardware check before the guides can make stronger promises.
 
-The **panel** images are simulated connected views of the current layout. They predate the ⚛🌊 masthead mark; controls and positions are unchanged. They help locate controls but are not evidence of a tested two-board instrument. The [connection guide](connection-guide.md) contains owner-supplied photographs of the actual build; its line-output diagram is a proposed circuit, not an as-built photo.
+The **panel** images are captures of the connected Pico page after the gateway upload; the Save As dialog was staged without writing a patch. They document layout and browser status, not audible output. The [connection guide](connection-guide.md) contains owner-supplied photographs of the actual build; its line-output diagram is a proposed circuit, not an as-built photo.
 
 ## Firmware snapshot
 
@@ -25,9 +25,9 @@ The two sketches and embedded browser page are the source of truth for these pag
 
 | Component | Source | SHA-256 |
 | --- | --- | --- |
-| Uno R4 sound engine | [QuarkWave_MIDI.ino](../QuarkWave_MIDI/QuarkWave_MIDI.ino) | `d5e5a2c8f409c45667c75011acd3bcb7de739f4aaaa44e994bd198dae565b3f5` |
-| Pico W web controller | [QuarkWave_UI_MIDI.ino](../QuarkWave_UI_MIDI/QuarkWave_UI_MIDI.ino) | `7733641b8651cf2f9ba992490a02067783f2995ebb1b3a2d34e240dd6c84b794` |
-| Embedded browser panel | [QuarkWave_UI.h](../QuarkWave_UI_MIDI/QuarkWave_UI.h) | `6975cecbde628688c93ce3d2146a6dbdc03b2443f6a4dde6f8d89fa7827cf8df` |
+| Uno R4 sound engine | [QuarkWave_MIDI.ino](../QuarkWave_MIDI/QuarkWave_MIDI.ino) | `66b968aa7746e6c14f81a4b5c0beb36b416dcf8db99a29e5e99e0051444014c8` |
+| Pico W web controller | [QuarkWave_UI_MIDI.ino](../QuarkWave_UI_MIDI/QuarkWave_UI_MIDI.ino) | `535940edd827898778f2d558949d797dfd99b89b7bc3f770072c62b3fec4d6fb` |
+| Embedded browser panel | [QuarkWave_UI.h](../QuarkWave_UI_MIDI/QuarkWave_UI.h) | `5283520cd7e50f82ae1d219fa9b139e2f965daf72e7f8e3d727f4d311f44d348` |
 
 The connected controller identified over USB on 2026-09-23 is a **Pico W (RP2040, 2 MB flash)**. Its deployed build uses a 1 MB LittleFS region to match the existing patch storage. The Uno identified as **Arduino UNO R4 WiFi**. Both uploads verified; the live panel showed **Pico: Connected** and **Uno: Connected · Pico patch** with the existing “Test Pluck” user patch. An automated browser pass exercised 50 control paths and 41 pointer keys, plus all 12 computer keys at three velocities. The Pico reported changes and the Uno handshake was initially connected, but the Uno does not acknowledge each sound command. A Pico return-message parser fix resolved the reproduced explicit-sync failure in repeated two-board tests. A temporary Uno diagnostic confirmed browser Note On, envelope movement, and a finite pre-DAC signal on one patch; audible output and per-control sound response remain unverified. See the [hardware test log](hardware-test-log.md).
 

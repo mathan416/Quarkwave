@@ -8,7 +8,7 @@
    - LED matrix: status, VU, and scope
 
    Extras:
-   - Pitch bend (±2 semitones; DIN/RTP/BLE)
+   - Pitch bend (±2 semitones; DIN/Pico gateway/BLE)
    - White-noise layer (CC93)
    - Simple delay/echo (CC12 time, CC13 feedback, CC14 mix)
    - MIDI Clock (24 PPQN) → LFO sync; CC3 toggles sync
@@ -23,10 +23,10 @@
 #define NUM_VOICES 4
 #define MAX_UNISON 3
 #define PER_VOICE_FILTER 0  // 0 = global SVF, 1 = per-voice SVF
-#define USE_RTP_MIDI 1
+#define USE_RTP_MIDI 0  // Network MIDI is received by the optional Pico gateway.
 #define BLE_DEVICE_NAME "QuarkWave"
 #define USE_BLE_MIDI 0
-#define USE_WIFI_STACK 1  // <- still needed for RTP-MIDI
+#define USE_WIFI_STACK 0  // Keep Wi-Fi polling out of the audio loop.
 #ifndef DEBUG_MIDI_EVENTS
 #define DEBUG_MIDI_EVENTS 0
 #endif
@@ -303,7 +303,8 @@ static uint8_t dlyRateCounter = 0;
 static uint16_t dlyTapSamples = 1;
 static float dlyTime = 0.25f, dlyFb = 0.25f, dlyMix = 0.0f;
 
-// Each input has its own clock history; DIN wins while it is active.
+// Each input has its own clock history; DIN wins while it is active. The
+// second clock stream is RTP-MIDI forwarded by the optional Pico gateway.
 enum ClockInput : uint8_t { CLOCK_NONE, CLOCK_DIN, CLOCK_RTP };
 struct MidiClockState {
   uint32_t lastPulseUs = 0;
@@ -1826,6 +1827,12 @@ void setupPICO() {
   PICO_MIDI.setHandleSystemExclusive([](byte* sysex, unsigned size) {
     touchUartRx();
     if (applySoundSysEx(sysex, size)) return;
+    if (sysex && size == 5 && sysex[0] == 0xF0 && sysex[1] == 0x7D &&
+        sysex[2] == 0x00 && sysex[3] == 0x14 && sysex[4] == 0xF7) {
+      touchRtpRx();
+      markStandaloneActivity();
+      return;
+    }
     if (!sysex || size != 5 || sysex[0] != 0xF0 || sysex[1] != 0x7D ||
         sysex[2] != 0x00 || sysex[4] != 0xF7) return;
     if (sysex[3] == 0x10) {
@@ -1838,6 +1845,10 @@ void setupPICO() {
       sendPicoLinkStatus(0x13);
     }
   });
+  PICO_MIDI.setHandleClock([]() { receiveClock(rtpClock, CLOCK_RTP); });
+  PICO_MIDI.setHandleStart([]() { receiveTransport(CLOCK_RTP, 0); });
+  PICO_MIDI.setHandleContinue([]() { receiveTransport(CLOCK_RTP, 1); });
+  PICO_MIDI.setHandleStop([]() { receiveTransport(CLOCK_RTP, 2); });
 }
 
 // DIN handlers

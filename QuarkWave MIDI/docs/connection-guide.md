@@ -1,4 +1,4 @@
-# Connection guide: photographed build and proposed audio output
+# Connection guide: photographed build and proposed MIDI/audio connections
 
 **Status (2026-09-23):** The board and jumper layout below is photographed, and the owner confirms the return-wire level shifter and separate USB power. The Uno `A0` audio output is **not yet connected**. The line-output circuit on this page is a **proposed, unbuilt design** for a powered speaker's line input or mixer, not a measured property of the current instrument. The firmware snapshot is [2026-09-23](README.md#firmware-snapshot).
 
@@ -29,6 +29,22 @@ In the photographs, both UART signal jumpers appear to enter separate channels o
 | Audio | Uno writes 12-bit samples to DAC pin `A0` at a nominal 22,050 samples/s. | **Not built**: no A0 output circuit, jack, or powered-speaker/mixer connection yet. |
 
 [Pico UART setup](../QuarkWave_UI_MIDI/QuarkWave_UI_MIDI.ino), [Uno MIDI instances and DAC output](../QuarkWave_MIDI/QuarkWave_MIDI.ino), [technical guide](technical-guide.md#connections-and-build-flags).
+
+## Proposed physical DIN MIDI IN for standalone Uno use
+
+The Uno firmware already listens at **31,250 baud** on `D2` through `SoftwareSerial(2, 3)`. The photographs do not show a DIN connector. A controller's MIDI OUT must reach `D2` through an **opto-isolated MIDI IN receiver**, not a direct jumper from a DIN jack. The plan below follows the [MIDI Association's 5-pin DIN electrical specification](https://www.midi.org/wp-content/uploads/wpforo/default_attachments/1709416667-ca33-MIDI-10-Electrical-Specification-Update.pdf); the receiver module or component-level circuit has not yet been chosen or built.
+
+![Proposed isolated 5-pin DIN MIDI IN feeding Uno D2](images/proposed-din-midi-in.svg)
+
+| Connection | Proposed wiring |
+| --- | --- |
+| DIN jack | Female 5-pin, 180°, labeled **MIDI IN**. Pins **4** and **5** feed the isolated receiver's current-loop input with the polarity specified by its circuit. Confirm pin numbering from the actual jack datasheet; rear views are easy to reverse. |
+| Isolation | Use a MIDI IN circuit or module designed to meet the MIDI 1.0 electrical specification, including input current limiting and reverse-voltage protection for the optocoupler. The input loop stays electrically isolated from the Uno. |
+| Receiver output | An **idle-high, 5 V logic UART output** goes to Uno **D2**. Power and ground for the receiver's *logic/output side* come from Uno 5 V and GND. |
+| Unused contacts | DIN pins **1** and **3** remain unconnected. DIN pin **2** and the jack shield have **no DC path** to Uno ground; the MIDI specification permits optional small RF capacitors, which are not needed for this initial build. |
+| Uno D3 | Configured as software-serial TX but no MIDI OUT or THRU connector is implemented. Do not wire D3 directly to a DIN jack. |
+
+Build this input with both USB cables unplugged. Check that DIN pin 2 and the jack shield are isolated from Uno ground, verify receiver supply polarity and an idle-high output at D2, then power the Uno and test Note On/Off from a known MIDI controller. The Uno remains usable without the Pico once this input and the separate audio output are built. Record the chosen receiver part, exact pin map, and measurements before replacing this proposed diagram with an as-built schematic. [Uno DIN receiver](../QuarkWave_MIDI/QuarkWave_MIDI.ino), [external MIDI guide](external-midi-guide.md).
 
 ## Proposed mono line output from Uno A0
 

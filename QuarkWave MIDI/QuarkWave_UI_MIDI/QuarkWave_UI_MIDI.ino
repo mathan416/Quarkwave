@@ -22,6 +22,7 @@
 #include <LittleFS.h>
 #include <ArduinoJson.h>
 #include <MIDI.h>
+#include <AppleMIDI.h>
 #include "QuarkWave_UI.h"
 #include "secrets.h"
 
@@ -34,6 +35,92 @@ MDNS mdns(udp);
 
 // MIDI
 MIDI_CREATE_INSTANCE(HardwareSerial, Serial1, MIDI_UART);
+APPLEMIDI_CREATE_INSTANCE(WiFiUDP, rtpMIDI, "QuarkWave", 5004);
+
+static bool rtpInitialized = false;
+static bool rtpConnected = false;
+static bool rtpSoundActivity = false;
+static bool rtpActivityReported = false;
+static uint32_t lastRtpMarkerMs = 0;
+void broadcastUnoStatus();
+
+// The gateway accepts only QuarkWave's public sound commands, never link,
+// reset, or matrix-display commands from an external RTP peer.
+static bool rtpSoundProgram(uint8_t program) {
+  return (program >= 100 && program <= 103) ||
+         (program >= 110 && program <= 112);
+}
+
+static bool rtpSoundSysEx(const byte* data, unsigned size) {
+  if (!data || size < 6 || data[0] != 0xF0 || data[1] != 0x7D ||
+      data[2] != 0x00 || data[size - 1] != 0xF7) return false;
+  if (data[3] == 0x01 && size == 7 && data[4] < 128 && data[5] < 128) {
+    const uint16_t bpm = data[4] | (data[5] << 7);
+    return bpm >= 40 && bpm <= 240;
+  }
+  return (data[3] == 0x02 && size == 7 && data[4] <= 1 && data[5] < 128) ||
+         (data[3] == 0x03 && size == 6 && data[4] <= 20);
+}
+
+static void markRtpSoundActivity() {
+  rtpSoundActivity = true;
+  const uint32_t now = millis();
+  if (rtpActivityReported && now - lastRtpMarkerMs < 250) return;
+  // This marker precedes the forwarded sound command in the same UART stream.
+  // It distinguishes a wireless controller from a Pico patch transaction.
+  const uint8_t marker[] = {0xF0, 0x7D, 0x00, 0x14, 0xF7};
+  MIDI_UART.sendSysEx(sizeof(marker), marker, true);
+  rtpActivityReported = true;
+  lastRtpMarkerMs = now;
+}
+
+static void setupRtpGateway() {
+  if (rtpInitialized) return;
+  rtpInitialized = true;
+  rtpMIDI.begin(MIDI_CHANNEL_OMNI);
+  rtpMIDI.turnThruOff();
+  rtpMIDI.setHandleNoteOn([](byte channel, byte note, byte velocity) {
+    markRtpSoundActivity();
+    MIDI_UART.sendNoteOn(note, velocity, channel);
+  });
+  rtpMIDI.setHandleNoteOff([](byte channel, byte note, byte velocity) {
+    markRtpSoundActivity();
+    MIDI_UART.sendNoteOff(note, velocity, channel);
+  });
+  rtpMIDI.setHandleControlChange([](byte channel, byte cc, byte value) {
+    markRtpSoundActivity();
+    MIDI_UART.sendControlChange(cc, value, channel);
+  });
+  rtpMIDI.setHandlePitchBend([](byte channel, int bend) {
+    markRtpSoundActivity();
+    MIDI_UART.sendPitchBend(bend, channel);
+  });
+  rtpMIDI.setHandleProgramChange([](byte channel, byte program) {
+    if (!rtpSoundProgram(program)) return;
+    markRtpSoundActivity();
+    MIDI_UART.sendProgramChange(program, channel);
+  });
+  rtpMIDI.setHandleSystemExclusive([](byte* data, unsigned size) {
+    if (!rtpSoundSysEx(data, size)) return;
+    markRtpSoundActivity();
+    MIDI_UART.sendSysEx(size, data, true);
+  });
+  rtpMIDI.setHandleClock([]() { MIDI_UART.sendClock(); });
+  rtpMIDI.setHandleStart([]() { MIDI_UART.sendStart(); });
+  rtpMIDI.setHandleContinue([]() { MIDI_UART.sendContinue(); });
+  rtpMIDI.setHandleStop([]() { MIDI_UART.sendStop(); });
+  ApplertpMIDI.setHandleConnected([](const APPLEMIDI_NAMESPACE::ssrc_t&, const char*) {
+    rtpConnected = true;
+    Serial.println("[RTP] Controller connected to Pico");
+    broadcastUnoStatus();
+  });
+  ApplertpMIDI.setHandleDisconnected([](const APPLEMIDI_NAMESPACE::ssrc_t&) {
+    rtpConnected = false;
+    Serial.println("[RTP] Controller disconnected from Pico");
+    broadcastUnoStatus();
+  });
+  Serial.println("[RTP] Pico gateway listening on UDP 5004");
+}
 
 // Server instances
 AsyncWebServer server(80);
@@ -443,6 +530,9 @@ bool setupMDNS() {
     } else {
         Serial.println("[setupMDNS] WARNING: Failed to register QuarkWave service");
     }
+
+    if (!mdns.addServiceRecord("QuarkWave._apple-midi", 5004, MDNSServiceUDP))
+        Serial.println("[setupMDNS] WARNING: RTP-MIDI discovery not advertised");
     
     mdnsActive = true;
     return true;
@@ -654,6 +744,7 @@ void broadcastUnoStatus() {
   doc["connected"] = unoOnline;
   doc["syncing"] = unoSyncing;
   doc["syncFailed"] = unoSyncFailed;
+  doc["rtpConnected"] = rtpConnected;
   doc["mode"] = !unoOnline ? "offline" : unoSyncing ? "syncing"
     : (unoFlags & 0x01) ? "standalone" : (unoFlags & 0x02) ? "pico" : "unsynced";
   String response;
@@ -680,14 +771,19 @@ void handleUnoLinkMessage(uint8_t command, uint8_t flags) {
   const bool wasSyncing = unoSyncing;
   unoOnline = true;
   unoFlags = flags & 0x03;
+  if (!(unoFlags & 0x01)) rtpActivityReported = false;
+  if (command == 0x11 && rtpSoundActivity && !(unoFlags & 0x03))
+    markRtpSoundActivity();
   lastUnoReplyMs = millis();
   if (command == 0x13 || ((unoFlags & 0x02) && unoSyncing && millis() - lastUnoSyncMs > 250)) {
     unoSyncing = false;
     unoSyncFailed = false;
     unoSyncRetries = 0;
+    rtpSoundActivity = false;
   }
   if (changed || command == 0x13 || wasSyncing != unoSyncing) broadcastUnoStatus();
-  if (command == 0x11 && !unoSyncing && !unoSyncFailed && !(unoFlags & 0x03) && !anyWsNotesHeld())
+  if (command == 0x11 && !unoSyncing && !unoSyncFailed && !rtpSoundActivity &&
+      !(unoFlags & 0x03) && !anyWsNotesHeld())
     startUnoSync(false);
 }
 
@@ -796,6 +892,7 @@ void setup() {
         
         setupWebServer();
         setupWebSocket();
+        setupRtpGateway();
         
         // mDNS setup
         if (setupMDNS()) {
@@ -820,6 +917,7 @@ void setup() {
 }
 
 void loop() {
+    if (rtpInitialized && WiFi.status() == WL_CONNECTED) rtpMIDI.read();
     if (mdnsActive) {
         mdns.run();
         checkMDNS();  // Add health monitoring
@@ -827,13 +925,17 @@ void loop() {
 
     if (websocketStarted) websocket.loop();
     
-    // Heartbeat blink every 30 seconds if connected
+    // Keep the heartbeat nonblocking so it cannot swallow MIDI Clock pulses.
     static unsigned long lastHeartbeat = 0;
+    static unsigned long heartbeatOffAt = 0;
     if (WiFi.status() == WL_CONNECTED && millis() - lastHeartbeat > 30000) {
         lastHeartbeat = millis();
         digitalWrite(LED_PIN, LOW);
-        delay(50);
-        digitalWrite(LED_PIN, HIGH);  // Quick off/on heartbeat
+        heartbeatOffAt = lastHeartbeat;
+    }
+    if (heartbeatOffAt && millis() - heartbeatOffAt >= 50) {
+        digitalWrite(LED_PIN, HIGH);
+        heartbeatOffAt = 0;
     }
     
     pollMidiIn();

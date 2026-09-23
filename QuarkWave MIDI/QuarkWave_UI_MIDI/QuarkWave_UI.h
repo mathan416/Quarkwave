@@ -160,7 +160,7 @@ static const char INDEX_HTML[] PROGMEM = u8R"HTML(
       <div class="brand-mark" aria-hidden="true">⚛🌊</div>
       <div><div class="brand-name">Quark<span>Wave</span></div><div class="brand-sub">Sound design studio</div></div>
     </div>
-    <div class="link-statuses"><div class="connection" id="connection" data-connected="false"><span class="connection-dot" aria-hidden="true"></span><span id="s" aria-live="polite">Pico: Connecting…</span></div><div class="connection connection--uno" id="unoConnection" data-connected="false"><span class="connection-dot" aria-hidden="true"></span><span id="unoLabel" aria-live="polite">Uno: Checking…</span></div></div>
+    <div class="link-statuses"><div class="connection" id="connection" data-connected="false"><span class="connection-dot" aria-hidden="true"></span><span id="s" aria-live="polite">Pico: Connecting…</span></div><div class="connection connection--uno" id="unoConnection" data-connected="false"><span class="connection-dot" aria-hidden="true"></span><span id="unoLabel" aria-live="polite">Uno: Checking…</span></div><div class="connection" id="rtpConnection" data-connected="false"><span class="connection-dot" aria-hidden="true"></span><span id="rtpLabel" aria-live="polite">RTP-MIDI: Checking…</span></div></div>
   </header>
 
   <section class="topbar" aria-label="Patch and session">
@@ -1121,6 +1121,8 @@ function setUnoStatus(){
     : unoLink.mode === 'unsynced' ? 'Connected · awaiting patch' : 'Not connected';
   label.textContent = 'Uno: ' + state;
   document.getElementById('unoConnection').dataset.connected = String(!!unoLink.connected);
+  document.getElementById('rtpLabel').textContent = 'RTP-MIDI: ' + (unoLink.rtpConnected ? 'Controller connected' : 'No controller');
+  document.getElementById('rtpConnection').dataset.connected = String(!!unoLink.rtpConnected);
   document.getElementById('syncUnoBtn').disabled = !unoLink.connected || !!unoLink.syncing;
   setKbEnabled();
 }

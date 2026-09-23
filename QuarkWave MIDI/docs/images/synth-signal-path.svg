@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1320" height="430" viewBox="0 0 1320 430" role="img" aria-labelledby="title desc">
+<title id="title">Uno R4 synthesis signal path</title>
+<desc id="desc">Notes and velocity drive voices and noise, followed by low-pass filtering and DC blocking. Chorus, drive and wavefold, bitcrush, tremolo, and delay lead to master gain, soft clipping, and the A0 DAC.</desc>
+<defs><marker id="right" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="10" markerHeight="10" orient="auto"><path d="M1 1 L11 6 L1 11 Z" fill="#32bdd6"/></marker></defs>
+<style>.head{font:700 26px system-ui,sans-serif;fill:#f4f7fb}.sub{font:15px system-ui,sans-serif;fill:#b9c9d8}.cardhead{font:700 19px system-ui,sans-serif;fill:#f4f7fb}.detail{font:15px system-ui,sans-serif;fill:#c8d4df}.foot{font:14px system-ui,sans-serif;fill:#d2dbe4}</style>
+<rect width="1320" height="430" rx="22" fill="#0b1728"/>
+<text x="42" y="47" class="head">Uno R4 synthesis signal path</text>
+<text x="42" y="75" class="sub">Audio flows left to right · control signals shape voices and filter</text>
+<rect x="36" y="152" width="210" height="166" rx="16" fill="#142a3b" stroke="#589bb5" stroke-width="2"/>
+<text x="141" y="195" text-anchor="middle" class="cardhead">Notes + velocity</text>
+<text x="141" y="231" text-anchor="middle" class="detail">Pico, DIN, or RTP</text>
+<text x="141" y="259" text-anchor="middle" class="detail">Arpeggiator timing</text>
+<rect x="285" y="152" width="210" height="166" rx="16" fill="#142a3b" stroke="#589bb5" stroke-width="2"/>
+<text x="390" y="195" text-anchor="middle" class="cardhead">Voices + noise</text>
+<text x="390" y="231" text-anchor="middle" class="detail">Oscillators, unison</text>
+<text x="390" y="259" text-anchor="middle" class="detail">ADSR envelopes</text>
+<rect x="534" y="152" width="210" height="166" rx="16" fill="#242336" stroke="#ac90c7" stroke-width="2"/>
+<text x="639" y="195" text-anchor="middle" class="cardhead">Filter</text>
+<text x="639" y="231" text-anchor="middle" class="detail">Low-pass SVF</text>
+<text x="639" y="259" text-anchor="middle" class="detail">DC blocker</text>
+<rect x="783" y="152" width="240" height="166" rx="16" fill="#242336" stroke="#ac90c7" stroke-width="2"/>
+<text x="903" y="195" text-anchor="middle" class="cardhead">Effects</text>
+<text x="903" y="225" text-anchor="middle" class="detail">Chorus · drive/fold</text>
+<text x="903" y="251" text-anchor="middle" class="detail">Bitcrush · tremolo</text>
+<text x="903" y="277" text-anchor="middle" class="detail">Delay</text>
+<rect x="1062" y="152" width="220" height="166" rx="16" fill="#302a25" stroke="#d4a46d" stroke-width="2"/>
+<text x="1172" y="195" text-anchor="middle" class="cardhead">Output</text>
+<text x="1172" y="231" text-anchor="middle" class="detail">Master gain + clip</text>
+<text x="1172" y="259" text-anchor="middle" class="detail">12-bit A0 DAC</text>
+<path d="M246 235 H285 M495 235 H534 M744 235 H783 M1023 235 H1062" stroke="#32bdd6" stroke-width="4" marker-end="url(#right)"/>
+<rect x="36" y="347" width="1246" height="48" rx="10" fill="#1a2a3e"/>
+<text x="54" y="376" class="foot">LFOs, velocity, and random modulation affect earlier stages. This is the firmware path; the physical line output is not assembled.</text>
+</svg>

@@ -1,0 +1,23 @@
+# Local credentials
+**/secrets.h
+
+# macOS and editors
+.DS_Store
+**/.DS_Store
+.vscode/
+.idea/
+*.swp
+*~
+
+# Arduino build products and board images
+build/
+**/build/
+*.elf
+*.hex
+*.bin
+*.uf2
+*.map
+
+# Generated local caches
+__pycache__/
+*.pyc

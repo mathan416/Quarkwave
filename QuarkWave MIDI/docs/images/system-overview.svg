@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="590" viewBox="0 0 1120 590" role="img" aria-labelledby="title desc">
+<title id="title">QuarkWave MIDI system overview</title>
+<desc id="desc">Browser connects to Pico over Wi-Fi. Pico and Uno exchange MIDI over a two-way UART link. Uno generates DAC audio. Pico keeps patch storage; separate DIN and RTP-MIDI inputs reach the Uno.</desc>
+<defs><marker id="right" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="10" markerHeight="10" orient="auto"><path d="M1 1 L11 6 L1 11 Z" fill="#32bdd6"/></marker><marker id="left" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="10" markerHeight="10" orient="auto"><path d="M1 1 L11 6 L1 11 Z" fill="#f5b85b"/></marker></defs>
+<style>.head{font:700 26px system-ui,sans-serif;fill:#f4f7fb}.sub{font:15px system-ui,sans-serif;fill:#b9c9d8}.cardhead{font:700 20px system-ui,sans-serif;fill:#f4f7fb}.detail{font:15px system-ui,sans-serif;fill:#c8d4df}.label{font:14px system-ui,sans-serif;fill:#b9c9d8}.foot{font:14px system-ui,sans-serif;fill:#d2dbe4}</style>
+<rect width="1120" height="590" rx="22" fill="#0b1728"/>
+<text x="42" y="47" class="head">QuarkWave MIDI system</text>
+<text x="42" y="75" class="sub">One instrument · browser controls, Pico patch state, and Uno sound generation</text>
+
+<rect x="40" y="172" width="218" height="157" rx="16" fill="#142a3b" stroke="#589bb5" stroke-width="2"/>
+<text x="149" y="215" text-anchor="middle" class="cardhead">Browser panel</text>
+<text x="149" y="247" text-anchor="middle" class="detail">Keyboard + controls</text>
+<text x="149" y="273" text-anchor="middle" class="detail">Connection labels</text>
+<rect x="338" y="172" width="218" height="157" rx="16" fill="#142a3b" stroke="#589bb5" stroke-width="2"/>
+<text x="447" y="215" text-anchor="middle" class="cardhead">Pico W</text>
+<text x="447" y="247" text-anchor="middle" class="detail">Web page + patch state</text>
+<text x="447" y="273" text-anchor="middle" class="detail">MIDI UART controller</text>
+<rect x="636" y="172" width="218" height="157" rx="16" fill="#242336" stroke="#ac90c7" stroke-width="2"/>
+<text x="745" y="215" text-anchor="middle" class="cardhead">Uno R4 WiFi</text>
+<text x="745" y="247" text-anchor="middle" class="detail">MIDI input + synth</text>
+<text x="745" y="273" text-anchor="middle" class="detail">12×8 LED matrix</text>
+<rect x="934" y="172" width="146" height="157" rx="16" fill="#302a25" stroke="#d4a46d" stroke-width="2"/>
+<text x="1007" y="215" text-anchor="middle" class="cardhead">A0 DAC</text>
+<text x="1007" y="247" text-anchor="middle" class="detail">Audio samples</text>
+<text x="1007" y="273" text-anchor="middle" class="detail">Line stage</text>
+<text x="1007" y="296" text-anchor="middle" class="detail">not built</text>
+
+<path d="M258 252 H338" stroke="#32bdd6" stroke-width="4"/>
+<text x="298" y="232" text-anchor="middle" class="label">Wi-Fi</text>
+<text x="298" y="293" text-anchor="middle" class="label">HTTP + WS</text>
+<path d="M556 246 H636" stroke="#32bdd6" stroke-width="4" marker-end="url(#right)"/>
+<path d="M636 276 H556" stroke="#f5b85b" stroke-width="4" marker-end="url(#left)"/>
+<text x="596" y="228" text-anchor="middle" class="label">MIDI UART</text>
+<path d="M854 252 H934" stroke="#32bdd6" stroke-width="4" marker-end="url(#right)"/>
+<text x="894" y="232" text-anchor="middle" class="label">DAC</text>
+
+<rect x="338" y="386" width="218" height="93" rx="13" fill="#1a2a3e" stroke="#7388a3" stroke-width="2"/>
+<text x="447" y="422" text-anchor="middle" class="cardhead">Patch storage</text>
+<text x="447" y="452" text-anchor="middle" class="detail">Pico LittleFS</text>
+<path d="M447 329 V386" stroke="#b6a4d2" stroke-width="3"/>
+<rect x="636" y="386" width="218" height="93" rx="13" fill="#1a2a3e" stroke="#7388a3" stroke-width="2"/>
+<text x="745" y="422" text-anchor="middle" class="cardhead">External MIDI</text>
+<text x="745" y="452" text-anchor="middle" class="detail">DIN + RTP-MIDI</text>
+<path d="M745 386 V329" stroke="#f5b85b" stroke-width="3"/>
+
+<rect x="40" y="516" width="1040" height="43" rx="10" fill="#1a2a3e"/>
+<text x="57" y="543" class="foot">The audio output circuit is planned but not installed. This diagram shows firmware roles and connection paths, not physical jumper colors.</text>
+</svg>

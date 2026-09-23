@@ -1,0 +1,77 @@
+# QuarkWave hardware test log
+
+**Purpose:** record repeatable results for the assembled Pico W and Uno R4. The guides are **source-reviewed, hardware untested** until the relevant checks pass. Copy this page for each firmware and wiring revision; record actual observations rather than replacing expectations with a checkmark.
+
+## Test record
+
+| Field | Record |
+| --- | --- |
+| Date, tester, location | |
+| Pico / Uno board and core versions | |
+| Firmware revision or the three hashes in the [index](README.md#firmware-snapshot) | |
+| Arduino libraries and relevant versions | |
+| Wiring revision / [connection guide](connection-guide.md) evidence | |
+| Power sources; measured Pico RX voltage during Uno TX | |
+| Audio destination and listening level | |
+| DIN controller, RTP-MIDI host, browser/device used | |
+
+For each check, record **Pass / Fail / Not run**, the observed behavior, and a short note or evidence link. If a check fails, include the smallest repeatable steps and any MIDI, serial, or screen capture that helps reproduce it.
+
+| Check | Expected from source | Result / observation |
+| --- | --- | --- |
+| Both boards start together | Uno replies when ready; Pico sends the selected boot patch on a clean Uno. Browser timing does not trigger sync. | |
+| Uno starts late; Uno restarts | Pico detects the new ready state and syncs a clean Uno. | |
+| Pico starts late; Pico restarts | Standalone Uno sound persists if an external input was used; otherwise the selected Pico patch syncs. | |
+| Return MIDI wire disconnected | Uno connection label goes offline after missed replies; no false patch acknowledgment. | |
+| Browser opens before / after sync | Pico and Uno status labels remain separate and consistent. | |
+| Browser note and release | Pointer and computer keys send notes; release and browser disconnect end owned notes. | |
+| Keyboard Velocity 1 / 100 / 127 | New notes use the selected velocity; held notes keep the old velocity. | |
+| Perform / Shape / Explore / All controls | Controls keep values; held browser notes continue across view changes. | |
+| Factory Load and user Save As | Factory sounds stay read-only; Save As chooses a slot and confirms occupied replacement. | |
+| User Save, Load, restart | Saved file, selected slot, and recovered sound agree; failure does not change selection. | |
+| Commit / Load committed sound | Snapshot can be saved and restored separately from user slots. | |
+| Randomize | Returned panel values remain inside each control's range, including effects. | |
+| Panic and visualizations | Panic silences notes; Status, VU, and Scope select the intended Uno LED view. | |
+| DIN without Pico | Notes, bend, sustain, and CC work with Uno defaults; no Pico is required. | |
+| RTP-MIDI without Pico | `QuarkWave` session accepts notes and sound controls. | |
+| Standalone then attach Pico | Existing sound remains until explicit **Sync Pico patch to Uno**; warning appears. | |
+| External Clock and transport | 40 / 120 / 240 BPM, Start / Continue / Stop, DIN priority, two-second failover, and held tempo behave as documented. | |
+| External custom messages | Accepted sound Program Changes and SysEx change sound and mark standalone activity; Pico-only commands have no effect on DIN/RTP. | |
+| Output and levels | Listen and measure across master volume, effects, and four-note/unison cases. Document safe connection and clipping behavior. | |
+
+The [documentation gaps](documentation-gaps.md) page provides more detail for handshake, storage, panel, MIDI, and wiring checks. After a result passes, update the relevant guide with the tested board/wiring revision and date; keep untested claims labeled accordingly.
+
+## Deployment smoke check — 2026-09-23
+
+- USB identities: Raspberry Pi Pico W (RP2040, 2 MB flash; serial `E6614C311B886039`) and Arduino UNO R4 WiFi (serial `F412FA704F54`).
+- Both sketches compiled and uploads verified. A full Pico flash backup was saved before upload; the new build uses the same 1 MB LittleFS region.
+- Browser loaded the redesigned Perform/Shape/Explore/All controls panel at `http://quarkwave.local/`. It displayed **Pico: Connected** and **Uno: Connected · Pico patch** after startup, and selected the existing user patch **Test Pluck** in slot 3.
+- Audio playback, control response, power-cycle recovery, standalone behavior, and MIDI Clock were **not tested** in this smoke check.
+
+## Owner-supplied hardware record — 2026-09-23
+
+- The [board overview and close-up](connection-guide.md#the-current-setup) show a Pico W, Uno R4 WiFi, bidirectional level-shifter module, and jumper wiring. The owner confirms Uno TX is shifted from 5 V to 3.3 V before Pico RX, with a common ground.
+- **Power:** Each board is currently powered through its own USB port. The audio jack and `A0` output circuit have not been assembled.
+- The [mono line-output schematic](connection-guide.md#proposed-mono-line-output-from-uno-a0) is a proposal for a powered speaker or mixer line input. Its DC level, audio level, and sound are **not tested**. Record build and measurement results above once assembled.
+- The owner also identified an unconnected [TDA1308 headphone amplifier module](connection-guide.md#proposed-headphones-with-the-owners-tda1308-board). Its pad ground, output DC, gain, and headphone sound have **not** been measured.
+
+## Automated browser and link check — 2026-09-23
+
+- Live embedded page at `http://10.0.2.89/` matched the source HTML. Initial WebSocket state contained eight user slots, eight factory presets, user slot 3 “Test Pluck,” 45 patch fields, and **Uno connected · Pico patch**.
+- Headless Chrome exercised 50 control paths in their visible views, 41 pointer keys, and all 12 computer note keys at velocities 1, 100, and 127. The browser sent the expected WebSocket messages and Pico `patchData` reflected control changes. A held browser note survived view switches. These observations do **not** prove that the Uno received each MIDI message or produced the intended audio; there is no per-control Uno acknowledgment and the audio output is not built.
+- The first run found that checked browser controls were parsed as zero by the Pico. The Pico handler now converts JSON booleans to 1/0; its sketch compiled, was uploaded, and a repeat control pass passed 50/50. The Pico source hash is recorded in the [index](README.md#firmware-snapshot).
+- Randomize returned all 45 patch fields. Factory and user loads selected the expected slots. Save As opened with eight destinations; factory save and occupied Save As without overwrite were rejected. Three visualization selections and Panic emitted their browser messages. Save/Save As success and Commit/Load Commit were **not run** to avoid altering the owner's stored patches. The existing user patch and live values were restored after the full sweep.
+- An isolated explicit **Sync Pico patch to Uno** sometimes led to an Uno status timeout. A repeat sequence showed `pico → syncing → offline`; another earlier sequence later reported `syncFailed`. Restarting the Pico with the verified firmware led to repeated Wi-Fi connection attempts. A USB power cycle restored its web page, but the Uno still showed offline. A subsequent USB power cycle of the Uno restored **Uno connected · Pico patch**. The final browser snapshot showed user slot 3 “Test Pluck.” Treat patch sync and return MIDI reliability as **failed/unresolved** until diagnosed on hardware.
+
+## Uno LED display photograph — 2026-09-23
+
+The owner supplied a [live photograph](led-display-guide.md) of the Uno R4 WiFi matrix with several top-row pixels illuminated. The photograph confirms a powered, illuminated matrix, but one still frame cannot validate heartbeat timing, connection-indicator meaning, voice bars, VU/Scope response, or scrolling messages. Those behaviors are source-reviewed in the [LED display guide](led-display-guide.md) and remain candidates for a timed hardware check.
+
+## Return-link parser fix — 2026-09-23
+
+- **Reproduced:** one explicit sync caused two Uno reset messages, showing the Pico had retried the complete patch transfer. A later run showed Uno `Hello` reception every second while the Pico declared it offline.
+- **Isolated:** a temporary Pico diagnostic build read valid raw Uno frames such as `F0 7D 00 11 02 F7`, but its generic MIDI receive library reported each as a two-byte SysEx. The Uno was sending status; the Pico discarded it before updating the connection state. The temporary diagnostic builds were removed after testing.
+- **Fix deployed:** the Pico now directly validates the fixed six-byte Uno status and completion frames on its return UART. The Uno also drains up to 48 queued Pico UART bytes per loop so full patch transfers are serviced promptly. Both final sketches compiled and uploads verified. Their hashes are in the [index](README.md#firmware-snapshot).
+- **Retest:** the first isolated sync completed with one Uno reset and completion marker, and the Pico returned to **Connected · Pico patch** in about 0.2 seconds. Five subsequent explicit syncs all completed and stayed connected; four reported completion in roughly 0.2–0.35 seconds, and one status confirmation arrived after about 2.1 seconds without an Uno reset retry. After the Uno release build was installed, clean-start automatic patch sync and a final explicit sync passed.
+- **Formerly failing action sequence:** headless Chrome ran Randomize, factory Load, user Load, explicit Sync, visualization commands, Panic, Save As dialog, and rejected save checks on the final builds. After ten seconds, status remained **connected / Pico patch**, with no sync failure. The original user slot 3 “Test Pluck” and all 45 live patch fields were restored; saved user files were not overwritten.
+- **Still unverified:** exact shifter voltage, forced loss of an acknowledgment, unplugged return wire, audible sound, and per-control Uno sound response.

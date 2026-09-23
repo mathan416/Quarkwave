@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1560 765" role="img" aria-labelledby="title desc">
+  <title id="title">Proposed component-level headphone wiring from the QuarkWave mono line node to a TDA1308 module</title>
+  <desc id="desc">The line output node after C2 and R3 connects to the clockwise end of a 10 kilohm audio-taper potentiometer. The other end is grounded. The wiper splits through two separate 1 kilohm resistors to the headphone module's IN L and IN R pads. The module's OUT L, OUT R, and OUT G pads connect to tip, ring, and sleeve of a stereo TRS headphone jack. Uno 5 volts feeds module VCC positive; Uno ground feeds VCC negative and IN GND. Verify OUT G has continuity to ground before wiring the jack.</desc>
+  <style>
+    .bg{fill:#0b1728}.panel{fill:#142a3b;stroke:#589bb5;stroke-width:2}.module{fill:#242336;stroke:#ac90c7;stroke-width:2}.wire{fill:none;stroke:#32bdd6;stroke-width:3.5;stroke-linecap:round;stroke-linejoin:round}.ground{fill:none;stroke:#7bd6a2;stroke-width:3}.point{fill:#32bdd6}.title{font:700 29px system-ui,sans-serif;fill:#f4f7fb}.section{font:700 22px system-ui,sans-serif;fill:#f4f7fb}.label{font:600 18px system-ui,sans-serif;fill:#f1f6fa}.text{font:17px system-ui,sans-serif;fill:#c8d4df}.small{font:15px system-ui,sans-serif;fill:#b9c9d8}
+  </style>
+  <rect class="bg" width="1560" height="765" rx="22"/>
+  <text class="title" x="45" y="56">Buffered mono signal → TDA1308 → stereo headphones</text>
+  <text class="text" x="45" y="88">External wiring schematic. The TDA1308 board's internal components are not shown or verified.</text>
+
+  <rect class="panel" x="32" y="126" width="1496" height="448" rx="15"/>
+  <text class="section" x="57" y="165">1  Audio and volume</text>
+
+  <rect class="panel" x="57" y="244" width="191" height="82" rx="8"/>
+  <text class="label" x="73" y="277">Mono line node</text>
+  <text class="small" x="73" y="304">after C2 / R3</text>
+  <path class="wire" d="M248 285 H355 V305"/>
+
+  <text class="label" x="300" y="237">RV1 10 kΩ audio taper</text>
+  <text class="small" x="298" y="263">clockwise end = signal</text>
+  <rect class="panel" x="338" y="305" width="34" height="119" rx="3"/>
+  <path class="wire" d="M355 424 V465"/>
+  <path class="ground" d="M335 465 H375 M341 474 H369 M348 483 H362"/>
+  <text class="small" x="292" y="510">other end = Uno GND</text>
+  <path class="wire" d="M400 365 H560 V270 H625 M560 365 V445 H625"/>
+  <path class="wire" d="M400 365 L373 365 M382 358 L373 365 L382 372"/>
+  <circle class="point" cx="560" cy="365" r="5"/>
+  <text class="small" x="429" y="346">wiper</text>
+
+  <rect class="panel" x="625" y="246" width="111" height="48" rx="4"/>
+  <text class="label" x="638" y="277">R4 1 kΩ</text>
+  <rect class="panel" x="625" y="421" width="111" height="48" rx="4"/>
+  <text class="label" x="638" y="452">R5 1 kΩ</text>
+  <path class="wire" d="M736 270 H815 M736 445 H815"/>
+
+  <rect class="module" x="815" y="209" width="365" height="326" rx="12"/>
+  <text class="section" x="838" y="243">TDA1308 board</text>
+  <text class="label" x="836" y="276">IN L</text>
+  <text class="label" x="836" y="451">IN R</text>
+  <text class="label" x="837" y="505">IN GND</text>
+  <text class="label" x="1082" y="276">OUT L</text>
+  <text class="label" x="1082" y="451">OUT R</text>
+  <text class="label" x="1082" y="505">OUT G</text>
+  <path class="wire" d="M1180 270 H1240 M1180 445 H1240"/>
+  <path class="ground" d="M1180 500 H1240"/>
+
+  <rect class="panel" x="1240" y="209" width="261" height="326" rx="12"/>
+  <text class="section" x="1262" y="243">3.5 mm TRS jack</text>
+  <text class="label" x="1262" y="276">tip = left</text>
+  <text class="label" x="1262" y="451">ring = right</text>
+  <text class="label" x="1262" y="505">sleeve = ground</text>
+  <text class="small" x="58" y="553">R4 and R5 are two different resistors. Split RV1's wiper signal into the two inputs; keep OUT L and OUT R separate.</text>
+
+  <rect class="panel" x="32" y="593" width="1496" height="136" rx="15"/>
+  <text class="section" x="57" y="632">2  Supply and ground connections</text>
+  <text class="text" x="57" y="668">Uno 5 V → board VCC +</text>
+  <text class="text" x="438" y="668">Uno GND → board VCC − and IN GND</text>
+  <text class="text" x="957" y="668">Check OUT G ↔ Uno GND continuity</text>
+  <text class="small" x="57" y="705">Before inserting headphones: volume fully down, then measure OUT L and OUT R for near-zero DC relative to OUT G.</text>
+<text class="small" x="45" y="751">Diagram colors indicate function, not jumper colors. Confirm the board pad labels before wiring.</text>
+</svg>

@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1320 470" role="img" aria-labelledby="title desc">
+  <title id="title">Proposed wiring from QuarkWave mono line output to the TDA1308 headphone board</title>
+  <desc id="desc">The AC-coupled mono output feeds a 10 kilohm audio-taper volume potentiometer. Its wiper splits through two separate 1 kilohm resistors to the TDA1308 board's L and R inputs. Board OUT L, OUT R, and OUT G feed the tip, ring, and sleeve of a stereo headphone jack. The board's VCC positive takes Uno 5 volts, and VCC negative and IN GND take Uno ground. Check that OUT G is common with Uno ground before use.</desc>
+  <style>
+    .bg{fill:#0b1728}.card{fill:#142a3b;stroke:#589bb5;stroke-width:2}.amp{fill:#242336;stroke:#ac90c7;stroke-width:2}.wire{fill:none;stroke:#32bdd6;stroke-width:3;stroke-linecap:round}.title{font:700 27px system-ui,sans-serif;fill:#f4f7fb}.head{font:700 19px system-ui,sans-serif;fill:#f1f6fa}.text{font:17px system-ui,sans-serif;fill:#c8d4df}.small{font:15px system-ui,sans-serif;fill:#b9c9d8}
+  </style>
+  <rect class="bg" width="1320" height="470" rx="22"/>
+  <text class="title" x="39" y="51">Mono sound → both ears, with a separate volume control</text>
+  <text class="small" x="40" y="79">Proposed connection map. The TDA1308 board has not yet been wired or tested.</text>
+
+  <rect class="card" x="35" y="133" width="224" height="159" rx="12"/>
+  <text class="head" x="56" y="169">Buffered line node</text>
+  <text class="text" x="56" y="203">after C2 and R3</text>
+  <text class="small" x="56" y="250">See line-output diagram</text>
+
+  <path class="wire" d="M259 210 H304"/>
+  <path class="wire" d="M296 203 L304 210 L296 217"/>
+  <rect class="card" x="304" y="133" width="249" height="159" rx="12"/>
+  <text class="head" x="325" y="169">10 kΩ audio pot</text>
+  <text class="text" x="325" y="202">line → outer end</text>
+  <text class="text" x="325" y="230">wiper → next stage</text>
+  <text class="text" x="325" y="258">other end → GND</text>
+
+  <path class="wire" d="M553 210 H611"/>
+  <path class="wire" d="M603 203 L611 210 L603 217"/>
+  <rect class="amp" x="611" y="112" width="364" height="202" rx="12"/>
+  <text class="head" x="634" y="148">TDA1308 headphone board</text>
+  <text class="text" x="634" y="185">wiper → 1 kΩ → IN L</text>
+  <text class="text" x="634" y="215">wiper → 1 kΩ → IN R</text>
+  <text class="text" x="634" y="257">OUT L / OUT R / OUT G</text>
+  <text class="small" x="634" y="284">Keep left and right outputs separate</text>
+
+  <path class="wire" d="M975 210 H1035"/>
+  <path class="wire" d="M1027 203 L1035 210 L1027 217"/>
+  <rect class="card" x="1035" y="133" width="248" height="159" rx="12"/>
+  <text class="head" x="1056" y="169">Stereo TRS jack</text>
+  <text class="text" x="1056" y="202">tip = OUT L</text>
+  <text class="text" x="1056" y="230">ring = OUT R</text>
+  <text class="text" x="1056" y="258">sleeve = OUT G</text>
+
+  <rect class="card" x="35" y="335" width="1248" height="94" rx="12"/>
+  <text class="head" x="56" y="369">Power and common reference</text>
+  <text class="text" x="56" y="399">Uno 5 V → board VCC +     •     Uno GND → board VCC − and IN GND     •     Verify OUT G → Uno GND continuity</text>
+<text class="small" x="40" y="455">Diagram colors indicate function, not jumper colors. Module internals and output levels remain unverified.</text>
+</svg>

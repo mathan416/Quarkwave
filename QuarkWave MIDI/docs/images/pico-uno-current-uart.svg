@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="640" viewBox="0 0 1120 640" role="img" aria-labelledby="title description">
+<title id="title">Current Pico W to Uno R4 WiFi UART connection</title>
+<desc id="description">The Pico and Uno have separate USB power. Pico GPIO 0 transmit reaches Uno D0 receive through one level-shifter channel. Uno D1 transmit reaches Pico GPIO 1 receive through another channel, shifted from the Uno's 5-volt side to the Pico's 3.3-volt side. Ground is common. Exact photographed shifter terminals remain to be checked.</desc>
+<defs>
+  <marker id="toRight" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="10" markerHeight="10" orient="auto"><path d="M1 1 L11 6 L1 11 Z" fill="#32bdd6"/></marker>
+  <marker id="toLeft" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="10" markerHeight="10" orient="auto"><path d="M1 1 L11 6 L1 11 Z" fill="#f5b85b"/></marker>
+</defs>
+<style>
+  .head{font:700 26px system-ui,sans-serif;fill:#f4f7fb}.sub{font:15px system-ui,sans-serif;fill:#b9c9d8}
+  .boxhead{font:700 20px system-ui,sans-serif;fill:#f4f7fb}.pin{font:700 17px system-ui,sans-serif;fill:#f1f6fa}
+  .small{font:14px system-ui,sans-serif;fill:#c8d4df}.tag{font:700 13px system-ui,sans-serif;fill:#0b1624;letter-spacing:.7px}
+  .foot{font:14px system-ui,sans-serif;fill:#d2dbe4}
+</style>
+<rect width="1120" height="640" rx="22" fill="#0b1728"/>
+<text x="42" y="47" class="head">Pico W ↔ Uno R4 WiFi</text>
+<text x="42" y="75" class="sub">Current USB-powered MIDI UART topology · 31,250 baud · signal colors show direction, not jumper colors</text>
+
+<rect x="64" y="109" width="246" height="52" rx="10" fill="#283b54" stroke="#7388a3"/>
+<text x="187" y="142" class="pin" text-anchor="middle">Pico USB power</text>
+<path d="M187 161 V187" stroke="#b9c9d8" stroke-width="3"/>
+<rect x="810" y="109" width="246" height="52" rx="10" fill="#283b54" stroke="#7388a3"/>
+<text x="933" y="142" class="pin" text-anchor="middle">Uno USB power</text>
+<path d="M933 161 V187" stroke="#b9c9d8" stroke-width="3"/>
+
+<rect x="64" y="187" width="246" height="348" rx="16" fill="#142a3b" stroke="#589bb5" stroke-width="2"/>
+<text x="187" y="220" class="boxhead" text-anchor="middle">Raspberry Pi Pico W</text>
+<text x="286" y="282" class="pin" text-anchor="end">GP0 · TX</text>
+<text x="286" y="369" class="pin" text-anchor="end">GP1 · RX</text>
+<text x="286" y="445" class="pin" text-anchor="end">3V3</text>
+<text x="286" y="500" class="pin" text-anchor="end">GND</text>
+
+<rect x="404" y="187" width="312" height="348" rx="16" fill="#242336" stroke="#ac90c7" stroke-width="2"/>
+<text x="560" y="220" class="boxhead" text-anchor="middle">Level shifter module</text>
+<text x="560" y="246" class="small" text-anchor="middle">3.3 V side (LV) · 5 V side (HV)</text>
+
+<text x="560" y="282" class="small" text-anchor="middle">Channel 1: Pico TX → Uno RX</text>
+
+<text x="560" y="369" class="small" text-anchor="middle">Channel 2: Uno TX → Pico RX</text>
+<text x="428" y="445" class="pin">LV†</text>
+<text x="692" y="445" class="pin" text-anchor="end">HV†</text>
+<text x="560" y="500" class="pin" text-anchor="middle">GND</text>
+
+<rect x="810" y="187" width="246" height="348" rx="16" fill="#302a25" stroke="#d4a46d" stroke-width="2"/>
+<text x="933" y="220" class="boxhead" text-anchor="middle">Arduino Uno R4 WiFi</text>
+<text x="834" y="282" class="pin">D0 · RX0</text>
+<text x="834" y="369" class="pin">D1 · TX1</text>
+<text x="834" y="445" class="pin">5V</text>
+<text x="834" y="500" class="pin">GND</text>
+
+<path d="M310 301 H404 M716 301 H810" stroke="#32bdd6" stroke-width="5"/>
+<path d="M404 301 H716" stroke="#32bdd6" stroke-width="5" marker-end="url(#toRight)"/>
+<path d="M810 388 H716 M404 388 H310" stroke="#f5b85b" stroke-width="5"/>
+<path d="M716 388 H404" stroke="#f5b85b" stroke-width="5" marker-end="url(#toLeft)"/>
+<path d="M310 462 H404 M716 462 H810" stroke="#b6a4d2" stroke-width="3" stroke-dasharray="7 5"/>
+<path d="M310 518 H810" stroke="#7bd6a2" stroke-width="4"/>
+
+<rect x="42" y="543" width="1036" height="64" rx="11" fill="#1a2a3e"/>
+<text x="58" y="567" class="foot">† Shifter supply terminal labels and exact channel pin pairs still need a continuity check.</text>
+<text x="58" y="590" class="foot">The two USB 5 V rails are not joined. Audio, DIN connector, and headphone circuitry are not installed here.</text>
+</svg>

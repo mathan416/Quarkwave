@@ -2,7 +2,7 @@
 
 The Uno R4 WiFi has a **12-column × 8-row red LED matrix**. It gives a quick view of connectivity and activity while you play. The green **ON** light and the small board **TX/RX** lights in the photograph are separate board LEDs, not pixels in the red matrix.
 
-**Evidence:** the photograph below shows the owner's powered Uno on 2026-09-23. The meanings and examples on this page are **source-reviewed** against the current Uno firmware. A still photograph cannot establish which of the momentary activity or heartbeat pixels were on at a particular instant. A targeted two-board check confirmed view selection and internal envelope/VU values for a browser note. The owner then confirmed that a held key lights a Status voice bar, flashes column 10, and produces movement in VU and Scope. Uno audio output remains untested. [Matrix implementation](../QuarkWave_MIDI/QuarkWave_MIDI.ino), [hardware test log](hardware-test-log.md).
+**Evidence:** the photograph below shows the owner's powered Uno on 2026-09-23. The meanings and examples on this page are **source-reviewed** against the current Uno firmware. A still photograph cannot establish which of the momentary activity or heartbeat pixels were on at a particular instant. A targeted two-board check confirmed view selection and internal envelope/VU values for a browser note. The owner then confirmed that a held key lights a Status voice bar, flashes column 10, and produces movement in VU and Scope. Recent two-board tests also confirmed Pico-forwarded wireless notes and disconnect releases; the physical DIN input and Uno audio output remain untested. [Matrix implementation](../QuarkWave_MIDI/QuarkWave_MIDI.ino), [hardware test log](hardware-test-log.md).
 
 ![Live Uno R4 WiFi showing several illuminated red matrix pixels along the top row, with its separate green ON light](images/uno-led-live.jpg)
 
@@ -26,12 +26,12 @@ In the browser panel, open **Explore** or **All controls**, find **LED matrix**,
 
 ## The top row stays useful in every view
 
-Count columns **1–12 from left to right as viewed on the board**. The firmware draws these indicators on the top row in all three views. A pixel marked “brief” is expected to flash and go dark; it does not represent a persistent fault.
+Count columns **1–12 from left to right as viewed on the board**. The firmware draws these indicators on the top row in all three settled views. Boot and scrolling mode labels temporarily replace the view, including its top row. A pixel marked “brief” is expected to flash and go dark; it does not represent a persistent fault.
 
-![Numbered Uno LED top row showing Uno network pixels off and Pico link, receive, wireless activity, note, and heartbeat indicators](images/uno-led-top-row.svg)
+![Numbered Uno LED top row showing disabled Uno network pixels, Pico link and receive, external sound activity, note, and heartbeat indicators](images/uno-led-top-row.svg)
 
 - **1–6:** `1–3` Uno Wi-Fi (off) · `4` BLE-MIDI (off) · `5` Uno RTP session (off) · `6` Pico link
-- **7–12:** `7` Pico RX · `8` unused · `9` forwarded RTP activity · `10` note · `11` unused · `12` heartbeat
+- **7–12:** `7` Pico MIDI RX · `8` unused · `9` external sound activity · `10` note · `11` unused · `12` heartbeat
 
 | Column | Meaning in this build | When it lights |
 | ---: | --- | --- |
@@ -39,9 +39,9 @@ Count columns **1–12 from left to right as viewed on the board**. The firmware
 | 4 | BLE-MIDI | Never in this build; BLE-MIDI is disabled. |
 | 5 | RTP-MIDI | Off: RTP sessions now terminate on the Pico, not the Uno. |
 | 6 | Pico link | While the Uno has received a Pico readiness request within roughly 3.5 seconds. This is a handshake indicator, not merely a powered UART. |
-| 7 | Pico UART receive, brief | For about 200 ms after a MIDI message arrives from the Pico. |
+| 7 | Pico MIDI receive, brief | For about 200 ms after the Uno handles a Pico UART note, sound control, Program Change, or SysEx. Pico readiness requests can flash this pixel even when nobody is playing. Clock and transport do not light it. |
 | 8 | Unused | Off. |
-| 9 | RTP receive, brief | For about 300 ms after the Uno receives the Pico gateway's wireless sound-activity marker. Clock pulses alone do not light it. |
+| 9 | External sound activity, brief | For about 300 ms after a DIN note, CC, or pitch bend, or a Pico-forwarded wireless activity marker, note, or sustain message. This shows activity, not an RTP connection. MIDI Clock and transport do not light it. A DIN sound Program Change or sound SysEx can change the sound without flashing this pixel. |
 | 10 | Note flash in Status view | For about 400 ms after a synth note starts. This flash is not drawn in VU or Scope. |
 | 11 | Unused | Off. |
 | 12 | Heartbeat | Toggles about every 250 ms; a regular blink shows the display loop is updating. |
@@ -55,6 +55,7 @@ The matrix first plays a boot animation and scrolls **QuarkWave**. The Uno no lo
 ## Quick checks
 
 - **Heartbeat blinks, Pico pixel is dark:** the display loop is running, but the Uno has not received a recent Pico readiness request. Check the browser's separate Pico and Uno connection labels and the inter-board wiring. The Pico-to-Uno link can be offline while the Uno remains playable from its separate DIN input.
+- **Column 9 flashes:** a DIN sound message or Pico-forwarded wireless sound message arrived. Check the Pico's RTP connection label to distinguish wireless session status; column 9 by itself cannot do that.
 - **Wi-Fi group is dark:** expected in this build. Check the Pico or browser for network status; the Uno can still play through its separate DIN input, subject to its wiring.
 - **Voice bars move but VU seems still:** switch to VU and play again. Status follows individual voice envelopes; VU follows the final synthesized output, so they are not identical.
 - **A mode label is scrolling:** wait for the text to cross the matrix and the selected view to resume. Keys remain playable during the scroll.

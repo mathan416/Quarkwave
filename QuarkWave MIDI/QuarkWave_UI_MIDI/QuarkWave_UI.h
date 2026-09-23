@@ -149,7 +149,7 @@ static const char INDEX_HTML[] PROGMEM = u8R"HTML(
   .footer-credit strong{color:#dbe9f5;font-weight:700}
   @media(max-width:1080px){.explore-grid,.all-explore-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.perform-grid{grid-template-columns:1fr 1fr}.shape-card{grid-template-columns:1fr}.shape-card .card-head{grid-column:1}.control-grid--three{grid-template-columns:repeat(2,minmax(0,1fr))}}
   @media(max-width:760px){.app-shell{padding:18px 14px 28px}.masthead{align-items:flex-start}.brand-mark{width:58px;height:42px;font-size:20px}.brand-name{font-size:26px}.brand-sub{font-size:10px}.topbar{border-radius:18px}.topbar-actions{width:100%}.topbar-actions .btn,.topbar-actions .more{flex:1}.more summary{width:100%}.view-tabs{width:100%}.view-tab{flex:0 0 auto;min-width:120px;padding:8px 12px}.view-tab small{display:none}.perform-grid,.shape-grid,.explore-grid,.all-shape-grid,.all-explore-grid{grid-template-columns:1fr}.card{padding:19px}.card--hero{min-height:225px}.hero-art{width:270px;opacity:.6}.keyboard-head{flex-wrap:wrap}.keyboard-actions{width:100%;justify-content:space-between}.keyboard-dock{padding:16px}.footer{flex-direction:column}.footer-credit{text-align:left}}
-  @media(max-width:450px){.masthead{flex-direction:column;gap:12px}.connection{align-self:flex-start}.field--patch,.field--name{flex-basis:100%}.topbar-actions{display:grid;grid-template-columns:1fr 1fr}.topbar-actions .more{grid-column:1/-1}.control-grid,.control-grid--three,.fx-grid{grid-template-columns:1fr}.shape-card{grid-template-columns:1fr}.view-intro h1{font-size:31px}.keyboard-head{align-items:flex-start}.keyboard-head p{max-width:170px}.effect{padding:14px}}
+  @media(max-width:450px){.masthead{flex-direction:column;gap:12px}.link-statuses{justify-content:flex-start}.connection{align-self:flex-start;max-width:100%;white-space:normal}.field--patch,.field--name{flex-basis:100%}.topbar-actions{display:grid;grid-template-columns:1fr 1fr}.topbar-actions .more{grid-column:1/-1}.control-grid,.control-grid--three,.fx-grid{grid-template-columns:1fr}.shape-card{grid-template-columns:1fr}.view-intro h1{font-size:31px}.keyboard-head{align-items:flex-start}.keyboard-head p{max-width:170px}.effect{padding:14px}}
   @media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -332,7 +332,7 @@ function initWS(){
           unoLink = msg;
           setUnoStatus();
           if (pendingUnoSync && msg.mode === 'pico') {
-            announce('Pico patch synced to Uno.');
+            announce('Selected sound loaded on Uno.');
             pendingUnoSync = false;
           } else if (pendingUnoSync && msg.syncFailed) {
             announce('Uno did not confirm the patch sync. Try again.');
@@ -1116,9 +1116,9 @@ function setKbEnabled(){
 
 function setUnoStatus(){
   const label = document.getElementById('unoLabel');
-  const state = unoLink.syncFailed ? 'Sync failed' : unoLink.mode === 'standalone' ? 'Connected · standalone sound'
-    : unoLink.mode === 'syncing' ? 'Syncing patch…' : unoLink.mode === 'pico' ? 'Connected · Pico patch'
-    : unoLink.mode === 'unsynced' ? 'Connected · awaiting patch' : 'Not connected';
+  const state = unoLink.syncFailed ? 'Sound sync failed' : unoLink.mode === 'standalone' ? 'Connected to Pico · standalone sound'
+    : unoLink.mode === 'syncing' ? 'Connected to Pico · loading sound…' : unoLink.mode === 'pico' ? 'Connected to Pico · sound loaded'
+    : unoLink.mode === 'unsynced' ? 'Connected to Pico · awaiting sound' : 'Not connected to Pico';
   label.textContent = 'Uno: ' + state;
   document.getElementById('unoConnection').dataset.connected = String(!!unoLink.connected);
   document.getElementById('rtpLabel').textContent = 'RTP-MIDI: ' + (unoLink.rtpConnected ? 'Controller connected' : 'No controller');

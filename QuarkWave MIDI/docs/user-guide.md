@@ -1,7 +1,7 @@
 # QuarkWave MIDI: musician guide
 
 **For:** development testers with an assembled Pico W web controller and Uno R4 sound module.  
-**Status:** source-reviewed, hardware untested (firmware snapshot: 2026-09-22). If a step differs on your unit, record it in [Documentation gaps](documentation-gaps.md).
+**Status:** source-reviewed, partial two-board check (firmware snapshot: 2026-09-23). If a step differs on your unit, record it in [Documentation gaps](documentation-gaps.md).
 
 QuarkWave is a four-voice digital synthesizer. The Pico W hosts the browser panel and remembers patches; the Uno R4 makes the sound. The browser's keyboard and controls reach the Uno through the Pico. The Uno also has separate MIDI inputs. Start with the [quick start](quick-start.md) if this is your first session. The [sound-design lessons](sound-design.md) provide guided listening exercises; the [external MIDI guide](external-midi-guide.md) covers playing the Uno without the browser. See the [technical guide](technical-guide.md) for message details.
 
@@ -9,12 +9,12 @@ QuarkWave is a four-voice digital synthesizer. The Pico W hosts the browser pane
 
 1. Power the assembled instrument and connect its audio output to the listening setup supplied with the build. Begin at a low listening level.
 2. Put your phone or computer on the same Wi-Fi network configured for the Pico W. Open `http://quarkwave.local/`. If the name does not resolve, ask the tester or builder for the Pico's IP address and open `http://<Pico-IP>/`.
-3. Wait for **Pico: Connected** and **Uno: Connected · Pico patch**. The first label confirms the browser connection. The second means the Uno answered the Pico and acknowledged its patch. The separate **RTP-MIDI** label shows whether a wireless controller has joined the Pico session; it can say **No controller** while the browser keyboard works. These labels do not verify the audio path.
+3. Wait for **Pico: Connected** and **Uno: Connected to Pico · sound loaded**. The first label confirms the browser connection to the Pico. The second means the Uno answered the Pico and acknowledged the selected sound settings. The separate **RTP-MIDI** label shows whether a wireless controller has joined the Pico session; it can say **No controller** while the browser keyboard works. These labels do not verify the audio path.
 4. Play the on-screen keyboard. You can also use the computer keys **A W S E D F T G Y H U J** while focus is outside text fields. Use **−** and **+** beside the keyboard to change its octave. Set **Velocity** from 1 to 127 beside the keyboard; the number is the MIDI Note On velocity for the next note. To choose another sound, select a patch and choose **Load patch**.
 
 **Expected from source:** the Pico sends note-on and note-off messages to the Uno. Closing a browser connection releases notes held by that connection. The browser keyboard starts at velocity 100 on each page load. Changing it affects new pointer, on-screen key, and computer-key notes; notes already held keep their original velocity. Computer-note keys still work while the Velocity slider has focus. This setting is not saved with a patch. Sound and level remain hardware checks. [Browser keyboard](../QuarkWave_UI_MIDI/QuarkWave_UI.h), [Pico note handling](../QuarkWave_UI_MIDI/QuarkWave_UI_MIDI.ino).
 
-If the Uno label says **Connected · standalone sound**, it has received notes or controls from another MIDI input. Its current sound is left alone. See [Take over a standalone sound](#take-over-a-standalone-sound) if you want the Pico's patch instead. If either connection is missing, see [When something goes wrong](#when-something-goes-wrong).
+If the Uno label says **Connected to Pico · standalone sound**, it has received notes or controls from another MIDI input. Its current sound is left alone. See [Take over a standalone sound](#take-over-a-standalone-sound) if you want the Pico's selected sound instead. If either connection is missing, see [When something goes wrong](#when-something-goes-wrong).
 
 ## Find your way around the panel
 
@@ -104,12 +104,12 @@ The source places chorus, drive/fold, bitcrush, and tremolo before delay. Use mo
 
 ## Take over a standalone sound
 
-**Source-reviewed, hardware untested.** The Uno can be played through its separate DIN input without the Pico. RTP-MIDI is available when the optional Pico is attached and powered. If it has received notes or controls, the browser reports **Uno: Connected · standalone sound** and the Pico does not replace its sound automatically. MIDI clock and transport messages alone do not count as standalone activity. External devices can also send QuarkWave sound Program Changes and SysEx; accepted sound commands count as standalone activity.
+**Source-reviewed, hardware untested.** The Uno can be played through its separate DIN input without the Pico. RTP-MIDI is available when the optional Pico is attached and powered. If it has received notes or controls, the browser reports **Uno: Connected to Pico · standalone sound** and the Pico does not replace its sound automatically. MIDI clock and transport messages alone do not count as standalone activity. External devices can also send QuarkWave sound Program Changes and SysEx; accepted sound commands count as standalone activity.
 
 1. Stop playing and release held notes on the external controller.
 2. In the browser, open **More actions** and choose **Sync Pico patch to Uno**.
 3. Read the warning, then confirm if you want to reset the Uno and replace its current sound and held notes with the Pico's current patch.
-4. Wait for **Uno: Connected · Pico patch**. If the panel reports **Sync failed**, check the return connection and try again.
+4. Wait for **Uno: Connected to Pico · sound loaded**. If the panel reports **Sound sync failed**, check the return connection and try again.
 
 **Expected from source:** the Pico sends a reset and full patch transfer, then waits for the Uno to acknowledge it. Loading a patch or committed sound is another explicit way to change the Uno's sound. [Pico sync](../QuarkWave_UI_MIDI/QuarkWave_UI_MIDI.ino), [Uno status](../QuarkWave_MIDI/QuarkWave_MIDI.ino).
 
@@ -119,10 +119,10 @@ The source places chorus, drive/fold, bitcrush, and tremolo before delay. Use mo
 | --- | --- |
 | `quarkwave.local` does not open | Confirm the Pico is powered and on the configured Wi-Fi. Try its IP address. The firmware does not provide a browser Wi-Fi setup flow. |
 | **Pico: Not connected** | The browser has not connected to the Pico's WebSocket service on port `8081`. Reload the page and check the Pico's Wi-Fi connection. |
-| **Uno: Not connected** | The Pico has not received a handshake reply. Ask the builder to check Uno power, both UART wires, common ground, and the level shifter on Uno TX → Pico RX. |
+| **Uno: Not connected to Pico** | The Pico has not received a handshake reply. Ask the builder to check Uno power, both UART wires, common ground, and the level shifter on Uno TX → Pico RX. |
 | Both labels show connected, but no sound | Check the listening level and assembled audio connection. The handshake confirms a firmware response, not audio output. |
-| **Uno: Connected · standalone sound** | An external DIN or RTP controller has sent notes or controls. Continue playing that sound or use **Sync Pico patch to Uno** for an explicit takeover. |
-| **Uno: Sync failed** | The Uno did not confirm the patch transfer after one retry. Check the return wire and use **Sync Pico patch to Uno** again. |
+| **Uno: Connected to Pico · standalone sound** | An external DIN or RTP controller has sent notes or controls. Continue playing that sound or use **Sync Pico patch to Uno** for an explicit takeover. |
+| **Uno: Sound sync failed** | The Uno did not confirm the sound transfer after one retry. Check the return wire and use **Sync Pico patch to Uno** again. |
 | Note continues after release | Select **Panic**. This sends MIDI CC120, All Sound Off, and clears notes tracked by the Pico for browser clients. |
 | Patch seems different after restart | On a clean Uno startup, the Pico should send its selected boot patch once the Uno replies, even before the browser opens. If the Uno reports standalone sound, its external-controller settings take precedence until you explicitly sync. |
 | **Save As** reports a failure | Check the named user slot and try again. An unreadable existing file counts as occupied; preserve it for the builder rather than assuming the slot is empty. |

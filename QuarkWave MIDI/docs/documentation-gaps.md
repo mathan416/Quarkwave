@@ -15,7 +15,7 @@
 
 Use the [hardware test log](hardware-test-log.md) to record observations for each assembled revision.
 
-The older-panel deployment gap was resolved on 2026-09-23: the current panel loaded after flashing the Pico W, and its Pico/Uno labels reached **Connected** / **Connected · Pico patch**. Automated browser checks cover controls and keys. The explicit-sync link failure has been reproduced, fixed, and retested on both boards; audio and per-command Uno reception checks remain open.
+The older-panel deployment gap was resolved on 2026-09-23: the current panel loaded after flashing the Pico W, and its labels reached **Pico: Connected** / **Uno: Connected to Pico · sound loaded**. Automated browser checks cover controls and keys. The explicit-sync link failure has been reproduced, fixed, and retested on both boards; audio and per-command Uno reception checks remain open.
 
 ## Hands-on acceptance pass, when both boards are available
 

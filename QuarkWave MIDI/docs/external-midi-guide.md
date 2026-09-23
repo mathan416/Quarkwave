@@ -28,7 +28,7 @@
 
 ## Use an external controller while the Pico is present
 
-An external note, CC, bend, or accepted QuarkWave sound command marks standalone activity. If that happens **before** the Pico's boot patch is applied, the Pico keeps the Uno's current sound and the browser shows **Uno: Connected · standalone sound**. The browser's **Sync Pico patch to Uno** explicitly resets and replaces that sound and held notes. Once a Pico patch has been applied, external MIDI can still play and adjust the Uno, but those changes may not appear in the Pico's patch controls or saved file. [Sync rule](technical-guide.md#patch-lifecycle-and-storage), [musician takeover steps](user-guide.md#take-over-a-standalone-sound).
+An external note, CC, bend, or accepted QuarkWave sound command marks standalone activity. If that happens **before** the Pico's boot patch is applied, the Pico keeps the Uno's current sound and the browser shows **Uno: Connected to Pico · standalone sound**. The browser's **Sync Pico patch to Uno** explicitly resets and replaces that sound and held notes. Once a Pico patch has been applied, external MIDI can still play and adjust the Uno, but those changes may not appear in the Pico's patch controls or saved file. [Sync rule](technical-guide.md#patch-lifecycle-and-storage), [musician takeover steps](user-guide.md#take-over-a-standalone-sound).
 
 ## Follow MIDI Clock
 

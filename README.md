@@ -24,6 +24,14 @@ The Pico serves the **Perform**, **Shape**, **Explore**, and **All controls** vi
 
 The [documentation index](QuarkWave%20MIDI/docs/README.md) lists every guide and its firmware snapshot. PDF editions are in [`QuarkWave MIDI/output/pdf/`](QuarkWave%20MIDI/output/pdf/); they are regenerated on request, so Markdown is the latest working copy.
 
+## All controls in one view
+
+The **All controls** tab puts the sound engine, modulation, effects, and Uno LED controls on one scrollable page.
+
+![Full-page simulated All controls view, from the patch strip and keyboard through sound shaping, effects, and LED matrix controls](QuarkWave%20MIDI/docs/images/all-controls-simulated.png)
+
+*Full-page simulated panel capture. It shows the complete layout, not a live hardware result.*
+
 ## Project layout
 
 ```text

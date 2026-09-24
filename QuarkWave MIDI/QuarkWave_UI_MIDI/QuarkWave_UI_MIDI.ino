@@ -1091,6 +1091,9 @@ void setupWebServer() {
         doc["mdns_active"] = mdnsActive;
         doc["hostname"] = "quarkwave.local";
         doc["ip"] = WiFi.localIP().toString();
+        doc["uptimeMs"] = millis();
+        doc["freeHeapBytes"] = rp2040.getFreeHeap();
+        doc["wifiRssiDbm"] = WiFi.RSSI();
         
         if (mdnsActive) {
             JsonArray services = doc["services"].to<JsonArray>();

@@ -1168,10 +1168,18 @@ async function activateHelpPage(page, remember = true, focusHeading = false, anc
     try {
       if (!helpPending.has(page)) {
         const pending = (async () => {
-          const response = await fetch('/help/' + page, {cache:'no-store'});
-          if (!response.ok) throw new Error('HTTP ' + response.status);
+          const controller = new AbortController();
+          const timeout = setTimeout(() => controller.abort(), 20000);
+          let html;
+          try {
+            const response = await fetch('/help/' + page, {cache:'no-store', signal:controller.signal});
+            if (!response.ok) throw new Error('HTTP ' + response.status);
+            html = await response.text();
+          } finally {
+            clearTimeout(timeout);
+          }
           const holder = document.createElement('div');
-          holder.innerHTML = await response.text();
+          holder.innerHTML = html;
           const section = holder.querySelector('.help-page');
           if (!section || section.id !== 'help-' + page) throw new Error('Invalid guide response');
           section.hidden = true;
@@ -1204,6 +1212,13 @@ function initHelpPages() {
     button.setAttribute('aria-controls', 'help-' + button.dataset.helpTarget);
     button.addEventListener('click', () => activateHelpPage(button.dataset.helpTarget, true, true));
   });
+  document.getElementById('helpContent').addEventListener('error', event => {
+    const image = event.target;
+    if (image.tagName !== 'IMG' || !image.closest('.help-illustration') || image.dataset.retry) return;
+    image.dataset.retry = '1';
+    const source = image.getAttribute('src');
+    setTimeout(() => { image.src = source + (source.includes('?') ? '&' : '?') + 'retry=1'; }, 400);
+  }, true);
   document.getElementById('helpContent').addEventListener('click', event => {
     const link = event.target.closest('a[data-help-link]');
     if (!link) return;

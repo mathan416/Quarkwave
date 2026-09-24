@@ -69,7 +69,7 @@ function renderGuide(guide) {
     images.set(onboard, {file:asset, mime:extension === '.svg' ? 'image/svg+xml' : 'image/jpeg'});
     const alt = escapeHtml(token.text || 'Guide illustration');
     const full = repoLink(`docs/images/${original}`);
-    return `<a class="help-illustration" href="${full}" target="_blank" rel="noopener noreferrer" aria-label="Open full-size image: ${alt}"><img loading="lazy" src="/help/images/${encodeURIComponent(onboard)}" alt="${alt}"><span>${alt} · open full size</span></a>`;
+    return `<a class="help-illustration" href="${full}" target="_blank" rel="noopener noreferrer" aria-label="Open full-size image: ${alt}"><img loading="lazy" decoding="async" src="/help/images/${encodeURIComponent(onboard)}" alt="${alt}"><span>${alt} · open full size</span></a>`;
   };
   let html = marked.parse(raw, {renderer, gfm:true});
   html = html.replace(/<table>/g,'<div class="help-table-wrap"><table>')

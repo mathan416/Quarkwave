@@ -4,7 +4,7 @@ QuarkWave has two parts: the **Uno R4** makes the sound, and the **Pico W** prov
 
 ## 1. Connect your listening setup
 
-Power the Pico and Uno through their USB cables. On the photographed development build, the physical line-output circuit is not yet installed. If the Uno has the USB audio firmware, you can hear it through a mono **QuarkWave USB Audio** input in Logic Pro; [the Logic steps](network-midi-setup.md#record-the-sound-while-playing-from-the-pico-page) walk through monitoring. Start with a low listening level. The proposed [A0 line-output circuit](connection-guide.md#proposed-mono-line-output-from-uno-a0) is a future physical connection, not a jack on the current breadboard.
+Power the Pico and Uno through their USB cables. On the photographed development build, the physical line-output circuit is not yet installed. If the Uno has the USB audio firmware, you can hear it through a mono **QuarkWave USB Audio** input in Logic Pro; [the Logic steps](network-midi-setup.md#record-the-sound-while-playing-from-the-pico-page) walk through monitoring. Start with a low listening level. The proposed [A0 line-output circuit](connection-guide.md#build-a-mono-line-output-from-uno-a0) is a future physical connection, not a jack on the current breadboard.
 
 ## 2. Open the instrument
 

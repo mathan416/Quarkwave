@@ -6,7 +6,7 @@ The Uno is a synth in its own right. The Pico gives it a browser and wireless co
 
 | Route | What it gives you |
 | --- | --- |
-| **DIN MIDI → Uno** | A conventional wired controller straight into the sound engine. The Uno firmware listens on D2, but the photographed breadboard does **not** yet have a DIN jack or its required isolated receiver. Build the [DIN input circuit](connection-guide.md#proposed-physical-din-midi-in-for-standalone-uno-use) before using this route. |
+| **DIN MIDI → Uno** | A conventional wired controller straight into the sound engine. The Uno firmware listens on D2, but the photographed breadboard does **not** yet have a DIN jack or its required isolated receiver. Build the [DIN input circuit](connection-guide.md#add-a-wired-midi-input) before using this route. |
 | **USB MIDI → Uno** | In the optional composite firmware, a computer sees **QuarkWave USB MIDI** and can receive **QuarkWave USB Audio** on the same cable. The Pico is optional for this path. |
 | **RTP-MIDI → Pico → Uno** | A Mac, Windows computer, or network MIDI controller joins the Pico's wireless session. The Uno's own Wi-Fi MIDI is off in this build. |
 | **BLE-MIDI** | Disabled in this build. |

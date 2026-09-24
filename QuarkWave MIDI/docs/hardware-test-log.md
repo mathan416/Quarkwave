@@ -52,8 +52,8 @@ The [documentation gaps](documentation-gaps.md) page provides more detail for ha
 
 - The [board overview and close-up](connection-guide.md#the-current-setup) show a Pico W, Uno R4 WiFi, bidirectional level-shifter module, and jumper wiring. The owner confirms Uno TX is shifted from 5 V to 3.3 V before Pico RX, with a common ground.
 - **Power:** Each board is currently powered through its own USB port. The audio jack and `A0` output circuit have not been assembled.
-- The [mono line-output schematic](connection-guide.md#proposed-mono-line-output-from-uno-a0) is a proposal for a powered speaker or mixer line input. Its DC level, audio level, and sound are **not tested**. Record build and measurement results above once assembled.
-- The owner also identified an unconnected [TDA1308 headphone amplifier module](connection-guide.md#proposed-headphones-with-the-owners-tda1308-board). Its pad ground, output DC, gain, and headphone sound have **not** been measured.
+- The [mono line-output schematic](connection-guide.md#build-a-mono-line-output-from-uno-a0) is a proposal for a powered speaker or mixer line input. Its DC level, audio level, and sound are **not tested**. Record build and measurement results above once assembled.
+- The owner also identified an unconnected [TDA1308 headphone amplifier module](connection-guide.md#add-headphones-with-the-tda1308-board). Its pad ground, output DC, gain, and headphone sound have **not** been measured.
 
 ## Automated browser and link check — 2026-09-23
 

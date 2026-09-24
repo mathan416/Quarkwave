@@ -2,7 +2,7 @@
 
 The quickest way to understand a synth control is to change it while playing the *same* short phrase. These six small experiments start from factory sounds, so you can reload the original whenever you want. Use [Save As](user-guide.md#save-load-and-recover-patches) before reloading if you have made a variation worth keeping.
 
-Start with a comfortable listening level. The current breadboard needs the [Uno USB audio route](network-midi-setup.md#record-the-sound-while-playing-from-the-pico-page) to be heard; the physical line output is still a [proposed circuit](connection-guide.md#proposed-mono-line-output-from-uno-a0).
+Start with a comfortable listening level. The current breadboard needs the [Uno USB audio route](network-midi-setup.md#record-the-sound-while-playing-from-the-pico-page) to be heard; the physical line output is still a [proposed circuit](connection-guide.md#build-a-mono-line-output-from-uno-a0).
 
 ## 1. Hear the oscillator morph
 

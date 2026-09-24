@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build the Uno native-USB audio prototype without editing the Arduino core."""
+"""Build the Uno native-USB audio and MIDI prototype without editing the core."""
 
 from pathlib import Path
 import shutil
@@ -10,7 +10,7 @@ import tempfile
 HERE = Path(__file__).resolve().parent
 UNO = HERE.parent.parent / "QuarkWave_MIDI"
 FQBN = "arduino:renesas_uno:unor4wifi"
-OUTPUT = Path("/private/tmp/quarkwave-usb-audio.bin")
+OUTPUT = Path("/private/tmp/quarkwave-usb-audio-midi.bin")
 FLAGS = " ".join(
     (
         "-DF_CPU=48000000",
@@ -22,6 +22,9 @@ FLAGS = " ".join(
         "-DCFG_TUD_AUDIO_ENABLE_EP_IN=1",
         "-DCFG_TUD_AUDIO_FUNC_1_EP_IN_SZ_MAX=46",
         "-DCFG_TUD_AUDIO_FUNC_1_EP_IN_SW_BUF_SZ=256",
+        "-DCFG_TUD_MIDI_RX_BUFSIZE=256",
+        "-DCFG_TUD_MIDI_TX_BUFSIZE=64",
+        "-DQUARKWAVE_USB_MIDI=1",
     )
 )
 
@@ -33,12 +36,33 @@ def replace_once(text: str, old: str, new: str) -> str:
 
 
 def patch_core(text: str) -> str:
+    # CoreMIDI names this single-cable USB MIDI destination from the USB
+    # product string, rather than the MIDI interface string on the tested Mac.
+    # Keep the audio interface's separate "QuarkWave USB Audio" label.
+    text = replace_once(
+        text,
+        "        [USBD_STR_PRODUCT] = USB_NAME,",
+        '        [USBD_STR_PRODUCT] = "QuarkWave USB MIDI",',
+    )
+    # macOS CoreMIDI retains the old UNO R4 name for the board's original
+    # VID/PID/serial combination. Give this optional firmware a distinct,
+    # stable serial suffix while keeping 120 bits of the hardware unique ID.
+    text = replace_once(
+        text,
+        '        utox8(t->unique_id_words[3], &idString[24]);',
+        '        utox8(t->unique_id_words[3], &idString[24]);\n'
+        "        idString[30] = 'Q';\n"
+        "        idString[31] = 'W';",
+    )
     text = replace_once(
         text,
         "#define USBD_STR_DFU_RT (0x05)",
         "#define USBD_STR_DFU_RT (0x05)\n"
         "#define USBD_STR_AUDIO (0x06)\n"
-        "#define USBD_AUDIO_EP_IN (0x85)",
+        "#define USBD_STR_MIDI (0x07)\n"
+        "#define USBD_AUDIO_EP_IN (0x85)\n"
+        "#define USBD_MIDI_EP_OUT (0x06)\n"
+        "#define USBD_MIDI_EP_IN (0x86)",
     )
     text = replace_once(
         text,
@@ -50,6 +74,13 @@ def patch_core(text: str) -> str:
         "                                            USBD_AUDIO_EP_IN, 46)\n"
         "        };\n"
         "        interface_count += 2;\n"
+        "#endif\n"
+        "#if CFG_TUD_MIDI\n"
+        "        uint8_t midi_desc[TUD_MIDI_DESC_LEN] = {\n"
+        "            TUD_MIDI_DESCRIPTOR(interface_count, USBD_STR_MIDI,\n"
+        "                                USBD_MIDI_EP_OUT, USBD_MIDI_EP_IN, 64)\n"
+        "        };\n"
+        "        interface_count += 2;\n"
         "#endif",
     )
     text = replace_once(
@@ -58,6 +89,9 @@ def patch_core(text: str) -> str:
         "            + (install_MSD ? sizeof(msd_desc) : 0);\n"
         "#if CFG_TUD_AUDIO\n"
         "        usbd_desc_len += sizeof(audio_desc);\n"
+        "#endif\n"
+        "#if CFG_TUD_MIDI\n"
+        "        usbd_desc_len += sizeof(midi_desc);\n"
         "#endif",
     )
     text = replace_once(
@@ -73,13 +107,18 @@ def patch_core(text: str) -> str:
         "#if CFG_TUD_AUDIO\n"
         "            memcpy(ptr, audio_desc, sizeof(audio_desc));\n"
         "            ptr += sizeof(audio_desc);\n"
+        "#endif\n"
+        "#if CFG_TUD_MIDI\n"
+        "            memcpy(ptr, midi_desc, sizeof(midi_desc));\n"
+        "            ptr += sizeof(midi_desc);\n"
         "#endif",
     )
     return replace_once(
         text,
         '        [USBD_STR_DFU_RT] = "DFU-RT Port",',
         '        [USBD_STR_DFU_RT] = "DFU-RT Port",\n'
-        '        [USBD_STR_AUDIO] = "QuarkWave USB Audio",',
+        '        [USBD_STR_AUDIO] = "QuarkWave USB Audio",\n'
+        '        [USBD_STR_MIDI] = "QuarkWave USB MIDI",',
     )
 
 
@@ -182,14 +221,20 @@ def patch_sketch(text: str) -> str:
     text = replace_once(
         text,
         "  R_DAC->DADR[0] = dac;",
-        "  R_DAC->DADR[0] = dac;\n  usbAudioPush(y);",
+        "  R_DAC->DADR[0] = dac;\n  ++usbAudioDacWrites;\n  usbAudioPush(y);",
     )
+    text = replace_once(
+        text,
+        "    audioSlipPipHoldUntil = now + 700;",
+        "    audioSlipPipHoldUntil = now + 700;\n    ++usbAudioSlipEvents;",
+    )
+    text = replace_once(text, "void setup() {", '#include "UsbMidiInput.h"\n\nvoid setup() {')
     if not text.rstrip().endswith("\n}"):
         raise RuntimeError("Expected the Uno loop to end the sketch")
-    return text.rstrip()[:-2] + "\n  usbAudioService();\n}\n"
+    return text.rstrip()[:-2] + "\n  usbAudioService();\n  usbMidiService();\n}\n"
 
 
-def installed_core() -> Path:
+def installed_paths() -> tuple[Path, Path]:
     result = subprocess.run(
         ["arduino-cli", "compile", "--fqbn", FQBN, "--show-properties", str(UNO)],
         check=True, capture_output=True, text=True,
@@ -198,7 +243,7 @@ def installed_core() -> Path:
     core = Path(props["build.core.path"])
     if core.parent.parent.name != "1.6.0":
         raise RuntimeError("This experiment is pinned to Arduino Renesas core 1.6.0")
-    return core
+    return core, Path(props["build.variant.path"])
 
 
 def main() -> None:
@@ -210,9 +255,18 @@ def main() -> None:
     with tempfile.TemporaryDirectory(prefix="quarkwave-usb-audio-") as directory:
         stage = Path(directory)
         core = stage / "core"
+        variant = stage / "variant"
         sketch = stage / "QuarkWaveUsbSynth"
         sketch.mkdir()
-        shutil.copytree(installed_core(), core)
+        source_core, source_variant = installed_paths()
+        shutil.copytree(source_core, core)
+        shutil.copytree(source_variant, variant)
+        variant_config = variant / "tusb_config.h"
+        variant_config.write_text(replace_once(
+            variant_config.read_text(),
+            "#define CFG_TUD_MIDI             0",
+            "#define CFG_TUD_MIDI             1",
+        ))
         core_usb = core / "USB" / "USB.cpp"
         core_usb.write_text(patch_core(core_usb.read_text()))
         core_boot = core / "boot.cpp"
@@ -221,16 +275,18 @@ def main() -> None:
         rusb2.write_text(patch_rusb2_driver(rusb2.read_text()))
         (sketch / "QuarkWaveUsbSynth.ino").write_text(patch_sketch(source.read_text()))
         shutil.copy2(HERE / "UsbAudioCapture.h", sketch / "UsbAudioCapture.h")
+        shutil.copy2(HERE / "UsbMidiInput.h", sketch / "UsbMidiInput.h")
         shutil.copy2(secrets, sketch / "secrets.h")
         subprocess.run(
             ["arduino-cli", "compile", "--fqbn", FQBN,
              "--build-path", str(stage / "build"),
              "--build-property", f"build.core.path={core}",
+             "--build-property", f"build.variant.path={variant}",
              "--build-property", f"build.defines={FLAGS}", str(sketch)],
             check=True,
         )
         shutil.copy2(stage / "build" / "QuarkWaveUsbSynth.ino.bin", OUTPUT)
-    print(f"USB audio prototype: {OUTPUT}")
+    print(f"USB audio/MIDI prototype: {OUTPUT}")
 
 
 if __name__ == "__main__":

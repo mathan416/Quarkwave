@@ -213,6 +213,7 @@ static uint8_t bitcrushDiv = 1;
 static float bitcrushLevels = 32768.0f;
 static float bitcrushInverseLevels = 1.0f / 32768.0f;
 static uint8_t bitcrushHoldCtr = 0;
+static float bitcrushQuantizedHeld = 0.0f;
 static float bitcrushHeld = 0.0f;
 static float tremDepth = 0.0f;
 static float tremRateHz = 4.0f;
@@ -246,11 +247,11 @@ inline float applyDriveFold(float x) {
   if (driveAmount > 0.001f) {
     const float pre = x * (1.0f + 8.0f * driveAmount);
     const float driven = pre / (1.0f + fabsf(pre));
-    x = fastLerp(x, driven, driveAmount);
+    x = driveAmount >= 0.999f ? driven : fastLerp(x, driven, driveAmount);
   }
   if (foldAmount > 0.001f) {
     const float folded = waveFold(x * (1.0f + 5.0f * foldAmount));
-    x = fastLerp(x, folded, foldAmount);
+    x = foldAmount >= 0.999f ? folded : fastLerp(x, folded, foldAmount);
   }
   return clampf(x, -1.0f, 1.0f);
 }
@@ -260,18 +261,24 @@ inline int32_t audioRound(float x) {
 inline float applyBitcrush(float x) {
   if (bitcrushMix <= 0.001f) return x;
 
-  float heldInput = x;
+  float crushed;
   if (bitcrushDiv > 1) {
-    if (bitcrushHoldCtr == 0) bitcrushHeld = x;
-    heldInput = bitcrushHeld;
+    // The held input cannot change until the next capture. Quantize it once
+    // per hold period instead of repeating float-to-int conversion per sample.
+    if (bitcrushHoldCtr == 0) {
+      bitcrushHeld = x;
+      bitcrushQuantizedHeld = audioRound(clampf(x, -1.0f, 1.0f) * bitcrushLevels)
+          * bitcrushInverseLevels;
+    }
+    crushed = bitcrushQuantizedHeld;
     if (++bitcrushHoldCtr >= bitcrushDiv) bitcrushHoldCtr = 0;
   } else {
     bitcrushHoldCtr = 0;
     bitcrushHeld = x;
+    crushed = audioRound(clampf(x, -1.0f, 1.0f) * bitcrushLevels)
+        * bitcrushInverseLevels;
   }
-
-  const float crushed = audioRound(clampf(heldInput, -1.0f, 1.0f) * bitcrushLevels) * bitcrushInverseLevels;
-  return fastLerp(x, crushed, bitcrushMix);
+  return bitcrushMix >= 0.999f ? crushed : fastLerp(x, crushed, bitcrushMix);
 }
 inline float applyTremolo(float x) {
   if (tremDepth <= 0.001f) return x;
@@ -303,9 +310,9 @@ static uint8_t dlyRateCounter = 0;
 static uint16_t dlyTapSamples = 1;
 static float dlyTime = 0.25f, dlyFb = 0.25f, dlyMix = 0.0f;
 
-// Each input has its own clock history; DIN wins while it is active. The
-// second clock stream is RTP-MIDI forwarded by the optional Pico gateway.
-enum ClockInput : uint8_t { CLOCK_NONE, CLOCK_DIN, CLOCK_RTP };
+// Each input has its own clock history. DIN wins while it is active, then
+// native USB MIDI (in the optional USB build), then Pico-forwarded RTP-MIDI.
+enum ClockInput : uint8_t { CLOCK_NONE, CLOCK_DIN, CLOCK_USB, CLOCK_RTP };
 struct MidiClockState {
   uint32_t lastPulseUs = 0;
   uint32_t beatStartUs = 0;
@@ -316,7 +323,7 @@ struct MidiClockState {
   float bpm = 120.0f;
   bool valid = false;
 };
-static MidiClockState dinClock, rtpClock;
+static MidiClockState dinClock, usbClock, rtpClock;
 static ClockInput selectedClock = CLOCK_NONE;
 static constexpr uint32_t CLOCK_TIMEOUT_US = 2000000UL;
 static bool externalTransportRunning = true;
@@ -609,7 +616,7 @@ static bool sustainLatch[128] = { false };
 // The Pico UART carries both browser notes and forwarded RTP notes. Keep
 // independent ownership so a wireless disconnect cannot release a DIN or
 // browser note of the same pitch.
-enum NoteInput : uint8_t { NOTE_PICO = 1, NOTE_DIN = 2, NOTE_RTP = 4 };
+enum NoteInput : uint8_t { NOTE_PICO = 1, NOTE_DIN = 2, NOTE_RTP = 4, NOTE_USB = 8 };
 static uint8_t noteOwners[128] = { 0 };
 
 enum ArpMode : uint8_t { ARP_OFF = 0,
@@ -810,11 +817,13 @@ static bool clockRecent(const MidiClockState& clock, uint32_t nowUs) {
 
 static void selectClock(uint32_t nowUs) {
   ClockInput next = clockRecent(dinClock, nowUs) ? CLOCK_DIN
+                  : clockRecent(usbClock, nowUs) ? CLOCK_USB
                   : clockRecent(rtpClock, nowUs) ? CLOCK_RTP : CLOCK_NONE;
   if (next == selectedClock) return;
   selectedClock = next;
   if (next == CLOCK_NONE) return; // Keep the last tempo and free-run at it.
-  MidiClockState& clock = next == CLOCK_DIN ? dinClock : rtpClock;
+  MidiClockState& clock = next == CLOCK_DIN ? dinClock
+                          : next == CLOCK_USB ? usbClock : rtpClock;
   bpmExt = clock.bpm;
   externalTransportRunning = clock.transportRunning;
   if (!externalTransportRunning && arpState.lastNote >= 0) {
@@ -857,7 +866,8 @@ static void receiveClock(MidiClockState& clock, ClockInput input) {
 }
 
 static void receiveTransport(ClockInput input, uint8_t command) {
-  MidiClockState& clock = input == CLOCK_DIN ? dinClock : rtpClock;
+  MidiClockState& clock = input == CLOCK_DIN ? dinClock
+                          : input == CLOCK_USB ? usbClock : rtpClock;
   const uint32_t nowUs = micros();
   if (command == 0) clock.phaseTicks = 0;
   clock.transportRunning = command != 2;
@@ -1385,6 +1395,8 @@ static inline void drawTopPips() {
   const bool clockLocked = tempoSrc == 1 && selectedClock != CLOCK_NONE &&
       ((selectedClock == CLOCK_DIN && dinClock.valid &&
         (uint32_t)(micros() - dinClock.lastPulseUs) <= CLOCK_TIMEOUT_US) ||
+       (selectedClock == CLOCK_USB && usbClock.valid &&
+        (uint32_t)(micros() - usbClock.lastPulseUs) <= CLOCK_TIMEOUT_US) ||
        (selectedClock == CLOCK_RTP && rtpClock.valid &&
         (uint32_t)(micros() - rtpClock.lastPulseUs) <= CLOCK_TIMEOUT_US));
   ledBuf[0][0] = picoPatchApplied ? 1 : 0;

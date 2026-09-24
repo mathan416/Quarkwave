@@ -19,6 +19,9 @@ static uint32_t usbAudioOverruns = 0;
 static uint32_t usbAudioPackets = 0;
 static uint32_t usbAudioServiceCalls = 0;
 static uint32_t usbAudioMaxServiceUs = 0;
+static uint32_t usbAudioServiceTotalUs = 0;
+static uint32_t usbAudioDacWrites = 0;
+static uint32_t usbAudioSlipEvents = 0;
 
 static inline void usbAudioPush(float sample) {
   if (!usbAudioStreaming) return;
@@ -70,19 +73,22 @@ static inline void usbAudioService() {
   tud_task();
   const uint32_t elapsedUs = (uint32_t)(micros() - startedUs);
   ++usbAudioServiceCalls;
+  usbAudioServiceTotalUs += elapsedUs;
   if (elapsedUs > usbAudioMaxServiceUs) usbAudioMaxServiceUs = elapsedUs;
 
   static uint32_t lastReportMs = 0;
   const uint32_t nowMs = millis();
   if ((uint32_t)(nowMs - lastReportMs) < 500 || !tud_cdc_connected()) return;
   lastReportMs = nowMs;
-  if (tud_cdc_write_available() < 96) return;
-  char line[96];
+  if (tud_cdc_write_available() < 128) return;
+  char line[128];
   const int len = snprintf(line, sizeof(line),
-      "USB stream=%u packets=%lu task=%lu max=%lu underrun=%lu overrun=%lu\r\n",
+      "USB stream=%u packets=%lu task=%lu max=%lu underrun=%lu overrun=%lu dac=%lu slip=%lu taskUs=%lu\r\n",
       (unsigned)usbAudioStreaming, (unsigned long)usbAudioPackets,
       (unsigned long)usbAudioServiceCalls, (unsigned long)usbAudioMaxServiceUs,
-      (unsigned long)usbAudioUnderruns, (unsigned long)usbAudioOverruns);
+      (unsigned long)usbAudioUnderruns, (unsigned long)usbAudioOverruns,
+      (unsigned long)usbAudioDacWrites, (unsigned long)usbAudioSlipEvents,
+      (unsigned long)usbAudioServiceTotalUs);
   if (len > 0 && len < (int)sizeof(line)) {
     tud_cdc_write(line, (uint32_t)len);
     tud_cdc_write_flush();

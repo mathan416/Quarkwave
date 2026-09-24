@@ -10,7 +10,12 @@
 | Pico W → Uno R4 WiFi | Forwarded MIDI | Existing wired MIDI UART |
 | Uno R4 WiFi → computer | Mono sound, in the optional USB-audio experiment | USB audio input named **QuarkWave USB Audio**, 22,050 Hz, 16-bit |
 
-The Pico and computer must be on the same reachable network. The **Pico**, rather than the Uno, hosts the wireless session. The Uno USB-audio connection carries sound, not USB MIDI. This build accepts **one RTP-MIDI peer at a time**. The Pico advertises `QuarkWave._apple-midi` through mDNS, but you can connect to the Pico's IP address if discovery fails. The browser at `http://quarkwave.local/` shows **RTP-MIDI: Controller connected** after a peer joins; **Pico: Connected** and **Uno: Connected…** are separate indicators. [Pico session and port](../QuarkWave_UI_MIDI/QuarkWave_UI_MIDI.ino), [Pico discovery](../QuarkWave_UI_MIDI/QuarkWave_UI_MIDI.ino), [panel status](../QuarkWave_UI_MIDI/QuarkWave_UI.h).
+The Pico and computer must be on the same reachable network for **RTP-MIDI**. The **Pico**, rather than the Uno, hosts that wireless session. The optional [Uno USB audio/MIDI experiment](../experiments/usb-audio/README.md) instead lets a DAW send MIDI to the Uno and receive its audio through **one Uno USB cable**, without a network MIDI session. The earlier audio-only experiment was confirmed in Logic; the new combined USB MIDI/audio image is source-built but still needs a live enumeration and simultaneous-play check. The Pico accepts **one RTP-MIDI peer at a time**. It advertises `QuarkWave._apple-midi` through mDNS, but you can connect to the Pico's IP address if discovery fails. The browser at `http://quarkwave.local/` shows **RTP-MIDI: Controller connected** only for a network peer; **Pico: Connected** and **Uno: Connected…** are separate indicators. [Pico session and port](../QuarkWave_UI_MIDI/QuarkWave_UI_MIDI.ino), [Pico discovery](../QuarkWave_UI_MIDI/QuarkWave_UI_MIDI.ino), [panel status](../QuarkWave_UI_MIDI/QuarkWave_UI.h).
+
+| Optional direct USB path | Carries | Connection |
+| --- | --- | --- |
+| Computer → Uno R4 WiFi | Class-compliant USB MIDI 1.0 messages | **QuarkWave USB MIDI** port on the tested Mac, in the composite experiment |
+| Uno R4 WiFi → computer | Mono sound at 22,050 Hz, 16-bit | **QuarkWave USB Audio** input on that same cable |
 
 ## On a Mac
 
@@ -56,6 +61,18 @@ The Uno currently presents a fixed **22.05 kHz** input; Logic may resample it fo
 5. To capture a fixed audio take, record the Uno's Input 1 on a separate mono audio track, or use Logic's **real-time** project bounce with the external instrument return routed to the output. Do not expect an offline bounce of an external MIDI track to render the Uno. [Apple's bounce guidance](https://support.apple.com/guide/logicpro/lgcp785a41c3/mac).
 
 Avoid monitoring **both** the External Instrument return and a separate record-enabled audio track at once; that can sound doubled. Choose one monitored path while recording the audio take. MIDI Clock and transport forwarding exist in the firmware, but Logic clock timing through the Pico and Uno still needs a dedicated hardware test. [External clock procedure](external-midi-guide.md#follow-midi-clock).
+
+### Sequence and record through the Uno USB cable
+
+This direct path needs the [combined USB audio/MIDI experiment](../experiments/usb-audio/README.md), not the normal Uno image or the earlier audio-only experiment. It does not require an RTP session or the Pico for note input.
+
+1. In **Audio MIDI Setup**, check for **QuarkWave USB MIDI** in MIDI Studio and **QuarkWave USB Audio** in Audio Devices after the Uno is connected. Both names appeared on the tested Mac with the latest combined image. An older **UNO R4 WiFi** MIDI entry may remain in macOS from the earlier image.
+2. In Logic, choose **QuarkWave USB Audio** as the input device and your speakers or headphones as output. Create an **External MIDI** track or External Instrument plug-in, set **MIDI Destination** to **QuarkWave USB MIDI**, channel 1, and **Audio Input** to Input 1 (mono).
+3. Leave automatic Program Change sending off for the first test. Send and release a MIDI note. Check that the Uno matrix responds and that the Logic audio meter moves while the track is monitored. Record a short MIDI region, play it back, then record the returning audio in real time.
+
+USB MIDI sound messages can put the Uno into **standalone sound** state, so a later Pico connection will preserve them until an explicit sync. MIDI Clock alone does not. When DIN, direct USB, and Pico RTP all send recent valid clock, the Uno prioritizes them in that order. [USB MIDI receiver](../experiments/usb-audio/UsbMidiInput.h), [Uno clock selection](../QuarkWave_MIDI/QuarkWave_MIDI.ino).
+
+The combined image passed a Mac test that sent a USB MIDI note while recording nonzero USB audio and kept the Pico–Uno link connected. The Logic Pro steps above still need a user check with the combined image; the earlier audio-only image was confirmed in Logic. [Combined test record](hardware-test-log.md#composite-uno-usb-midi-and-audio--2026-09-23).
 
 ## If the connection or notes fail
 

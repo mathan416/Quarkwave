@@ -9,7 +9,7 @@ import time
 
 
 FQBN = "arduino:renesas_uno:unor4wifi"
-DEFAULT_IMAGE = Path("/private/tmp/quarkwave-usb-audio.bin")
+DEFAULT_IMAGE = Path("/private/tmp/quarkwave-usb-audio-midi.bin")
 
 
 def uno_ports() -> dict[str, str]:

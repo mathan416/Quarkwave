@@ -1,16 +1,12 @@
-# QuarkWave patch book
+# Sounds to start from
 
-**Status:** source-reviewed, hardware untested (firmware snapshot: 2026-09-23). The factory settings below come from the [Pico preset definitions](../QuarkWave_UI_MIDI/QuarkWave_UI_MIDI.ino#L345). Descriptions of how they might sound, and the new recipes, are suggestions to audition on an assembled instrument.
+QuarkWave comes with **eight factory sounds** on the Pico. They are read-only, so you can explore freely: loading a factory sound again restores its starting settings. Eight separate **user slots** hold the variations you decide to keep.
 
-## Before you start
-
-The Pico contains eight read-only factory presets, numbered `100–107` in its patch list. A new Pico selects **Warm Pad**. The eight user slots, `0–7`, are separate; on a new Pico they are empty until you save. Factory edits live in the current sound until you load another patch or save them to a user slot. [Preset definitions](../QuarkWave_UI_MIDI/QuarkWave_UI_MIDI.ino#L345), [patch storage](../QuarkWave_UI_MIDI/QuarkWave_UI_MIDI.ino), [save procedure](user-guide.md#save-load-and-recover-patches).
-
-To try a sound, choose it in the patch strip and select **Load patch**. Set a comfortable **Master volume** before playing. To keep an edit, enter a name, select **Save As**, choose one of the eight user slots, and select **Save to slot**. The panel asks before replacing an occupied slot. Saving never changes the factory preset. The keyboard's **Velocity** setting changes new browser notes but is not part of any patch. These operating steps are **source-reviewed, hardware untested**. [Browser patch actions](../QuarkWave_UI_MIDI/QuarkWave_UI.h), [Pico save handling](../QuarkWave_UI_MIDI/QuarkWave_UI_MIDI.ino).
+Choose a sound in the patch strip and select **Load patch**. Set a comfortable **Volume** before playing. The factory sounds are at indexes 100–107 inside the firmware; the user slots are 0–7. A new Pico starts with Warm Pad selected and empty user slots.
 
 ## Factory presets
 
-The descriptions follow the initialized settings; they are starting points for listening, not claims from an audio test. Values shown here are rounded source settings. The Pico converts them to effective MIDI steps when loading, so a panel readout may differ slightly. All eight select internal tempo at 120 BPM, leave the arpeggiator off, and start with bitcrush, tremolo, drive, and fold mixes or amounts at zero. [Factory table](../QuarkWave_UI_MIDI/QuarkWave_UI_MIDI.ino#L345), [MIDI value conversion](technical-guide.md#panel-ranges-and-stored-patch-values).
+Each sound has a different job. The values below are starting settings from the preset definitions; the panel may show a nearby value after the seven-bit MIDI conversion. All eight use internal tempo at 120 BPM, start with the arpeggiator off, and leave bitcrush, tremolo, drive, and fold off.
 
 | Factory sound | Source settings that shape it | First thing to try |
 | --- | --- | --- |
@@ -23,15 +19,15 @@ The descriptions follow the initialized settings; they are starting points for l
 | **Noise Perc** `106` | One oscillator, 0.5 noise amount, very short envelope, 3.2 kHz cutoff, strong velocity-to-cutoff response. | Play short notes across the keyboard, then adjust **Noise**. |
 | **Chrs Strngs** `107` | Three oscillators, 16-cent detune, 0.9 s release, 1.5 kHz cutoff, chorus mix 0.35 and light delay. | Hold a chord and compare **Chorus Mix** at its preset value and zero. |
 
-**A useful comparison:** Warm Pad, Sweep Pad, and Chrs Strngs all use three oscillators, but differ in envelope timing, filter movement, and chorus. Load each in turn and hold the same chord. Pluck, EP Keys, and Noise Perc show how envelope and velocity response change short notes. [Factory table](../QuarkWave_UI_MIDI/QuarkWave_UI_MIDI.ino#L345).
+For a quick comparison, play the same chord with **Warm Pad**, **Sweep Pad**, and **Chrs Strngs**. All three use three oscillators, but their envelope, filter motion, and chorus settings make them behave differently. For short notes, compare **Pluck**, **EP Keys**, and **Noise Perc**.
 
 ## New sounds to try
 
-These are **suggested user patches**, not built-in presets. Start each recipe by loading its named factory preset; only change the listed controls. The values are within the Uno's documented MIDI ranges, but the exact panel value may land on the nearest MIDI step. Play and adjust by ear, then use **Save As** if you like the result. Sound descriptions are ideas for testing and remain **hardware untested**. [Panel controls](../QuarkWave_UI_MIDI/QuarkWave_UI.h), [Uno control ranges](technical-guide.md#control-changes).
+These five recipes are **ideas for user patches**, not extra factory presets. Load the named starting sound, change only the listed controls, then play and adjust by ear. The sliders land on MIDI steps, so a displayed value may be close to the suggested number rather than identical. Save As only when you like the result.
 
 ### Glass Bells — from Pluck
 
-For bright, short notes with a longer tail:
+A bright pluck with a longer tail:
 
 1. Load **Pluck**. In Shape, set **Decay** near `0.40 s`, **Sustain** near `10%`, **Release** near `0.70 s`, and **Cutoff** near `6000 Hz`.
 2. In Explore, set **Chorus Mix** near `10%` and **Delay Mix** near `25%`. Leave the preset's **Sync to 1/16 note** on.
@@ -39,7 +35,7 @@ For bright, short notes with a longer tail:
 
 ### Sub Current — from Solid Bass
 
-For a restrained bass with more pitch glide:
+A restrained bass with a little more pitch movement:
 
 1. Load **Solid Bass**. In Shape, set **Cutoff** near `550 Hz`, **Glide** near `0.08 s`, and keep **Unison** at **1 oscillator**.
 2. In Explore, add **Drive** near `15%`. Leave **Delay Mix** at zero.
@@ -47,7 +43,7 @@ For a restrained bass with more pitch glide:
 
 ### Orbit Arp — from PWM Lead
 
-For a repeating sequence that follows QuarkWave's internal tempo:
+A repeating line that follows QuarkWave's internal tempo:
 
 1. Load **PWM Lead**. In Explore, leave **Use external MIDI clock** off and set **Internal BPM** to `120`.
 2. Set **Arpeggiator** to **Up**, **Arp division** to `2`, and **Arp gate** near `55`.
@@ -56,7 +52,7 @@ For a repeating sequence that follows QuarkWave's internal tempo:
 
 ### Tape Haze — from EP Keys
 
-For softer keys with a worn texture:
+Soft keys with a worn edge:
 
 1. Load **EP Keys**. In Shape, set **Cutoff** near `1700 Hz`.
 2. In Explore, set **Chorus Mix** near `35%`, **Bitcrush Mix** near `15%`, **Bits** near `8`, and **Tremolo Depth** near `10%` with **Rate** near `2 Hz`.
@@ -64,16 +60,15 @@ For softer keys with a worn texture:
 
 ### Storm Drums — from Noise Perc
 
-For a noisy, struck texture:
+A noisy, struck texture:
 
 1. Load **Noise Perc**. In Shape, set **Noise** near `70%`, **Cutoff** near `2500 Hz`, **Decay** near `0.12 s`, and **Release** near `0.08 s`.
 2. In Explore, set **Bitcrush Mix** near `25%`, **Bits** near `6`, and **Drive** near `18%`.
 3. Play short notes at different pitches and velocities. Save As **Storm Drums** if it earns a slot.
-
 ## Make your own variation
 
-1. Load the closest factory preset, then change one section at a time: Shape for tone and envelope, Explore for movement and effects.
-2. Compare the edited sound with the factory starting point by loading the factory preset again. Reloading discards unsaved edits, so use **Save As** first if you want to keep them.
-3. Give the user patch a name that hints at its use. Each user slot holds one patch; confirm before overwriting one you want to keep.
+1. Start from the factory sound closest to what you want. Change one section at a time: **Shape** for tone and note shape, **Explore** for movement and effects.
+2. Play the sound in a musical phrase, not only as a single held key. Try a chord, a soft note, and a strong note.
+3. Give the variation a descriptive name and use **Save As** to place it in a user slot. The panel confirms before replacing an occupied slot.
 
-The Pico stores browser-edited patch settings. Changes sent directly to the Uno from a separate MIDI controller may not be reflected in the Pico's saved patch data. [Patch behavior](user-guide.md#save-load-and-recover-patches), [Pico patch storage](technical-guide.md#patch-lifecycle-and-storage).
+Reloading the factory sound discards unsaved changes. The Pico saves the controls it knows about; changes sent straight to the Uno by another MIDI device may not be reflected in that file. For the exact preset values and MIDI ranges, see the [technical guide](technical-guide.md#panel-ranges-and-stored-patch-values).

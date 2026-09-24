@@ -1,46 +1,54 @@
-# Play the Uno from an external MIDI controller
+# Play QuarkWave from another controller
 
-**For:** musicians and testers using QuarkWave's Uno R4 sound module without the Pico, or alongside it. **Status:** source-reviewed, gateway smoke-tested, physical DIN hardware untested (firmware snapshot: 2026-09-23). The physical DIN connector is unbuilt; its [proposed isolated input](connection-guide.md#proposed-physical-din-midi-in-for-standalone-uno-use) is not an as-built connection.
+The Uno is a synth in its own right. The Pico gives it a browser and wireless connections, but you can play the sound engine from a separate MIDI source. This guide helps you choose a path and explains what happens when more than one controller is present.
 
 ## Choose an input
 
-| Input | What this build supports | What to check on the assembled instrument |
-| --- | --- | --- |
-| Separate DIN MIDI | The Uno listens for MIDI through a software serial receiver on pin 2. It accepts all MIDI channels. | Confirm the installed DIN connector and interface circuit before connecting a controller. Source pin assignments alone are not a wiring guide. |
-| Direct USB MIDI | The optional composite Uno image accepts class-compliant USB MIDI and returns mono USB audio on the same cable. It accepts all MIDI channels. | Build and upload the [USB audio/MIDI experiment](../experiments/usb-audio/README.md). MIDI enumeration and one simultaneous MIDI/audio recording passed on macOS; Logic Pro with the combined image still needs a check. |
-| RTP-MIDI | Enabled when the optional Pico is attached. The Pico hosts the `QuarkWave` session on UDP port `5004` and forwards MIDI to the Uno. | Connect to the Pico's network address or advertised session. The Uno alone has no wireless MIDI in this build. |
-| BLE-MIDI | Disabled in this build. | Do not expect a Bluetooth MIDI device to discover QuarkWave. |
+| Route | What it gives you |
+| --- | --- |
+| **DIN MIDI → Uno** | A conventional wired controller straight into the sound engine. The Uno firmware listens on D2, but the photographed breadboard does **not** yet have a DIN jack or its required isolated receiver. Build the [DIN input circuit](connection-guide.md#proposed-physical-din-midi-in-for-standalone-uno-use) before using this route. |
+| **USB MIDI → Uno** | In the optional composite firmware, a computer sees **QuarkWave USB MIDI** and can receive **QuarkWave USB Audio** on the same cable. The Pico is optional for this path. |
+| **RTP-MIDI → Pico → Uno** | A Mac, Windows computer, or network MIDI controller joins the Pico's wireless session. The Uno's own Wi-Fi MIDI is off in this build. |
+| **BLE-MIDI** | Disabled in this build. |
 
-[Uno MIDI instances and build flags](../QuarkWave_MIDI/QuarkWave_MIDI.ino), [Pico network gateway](../QuarkWave_UI_MIDI/QuarkWave_UI_MIDI.ino), [physical connection notes](connection-guide.md).
+The Uno accepts ordinary notes on all MIDI channels, pitch bend with a fixed ±2-semitone span, sustain pedal **CC64**, and the sound controls in the [MIDI table](technical-guide.md#control-changes).
 
 ## Play without the Pico
 
-1. Power the assembled Uno and connect its tested audio output to your listening setup at a low level. Connect your controller through the build's verified DIN input.
-2. Send Note On and Note Off messages. **Expected from source:** the Uno plays its built-in startup sound and remains playable without a Pico or browser. This startup sound is the Uno's firmware default, **not** the Pico's Warm Pad factory preset. [Uno defaults](../QuarkWave_MIDI/QuarkWave_MIDI.ino), [external input handlers](../QuarkWave_MIDI/QuarkWave_MIDI.ino).
-3. Try pitch bend (fixed ±2 semitones), sustain pedal CC64, or a sound CC from the [technical CC table](technical-guide.md#control-changes). These are live changes in the Uno; the Uno does not save patch files. [Uno bend and CC handlers](../QuarkWave_MIDI/QuarkWave_MIDI.ino).
-4. Release notes when finished. If a note remains on, send All Notes Off CC123 or All Sound Off CC120 from a controller that supports it, then stop and inspect the MIDI stream. These messages are described by the Uno's CC handler; their behavior needs hardware confirmation. [CC map](technical-guide.md#control-changes).
+Once the DIN input and an audio output are built, power the Uno and connect a controller's MIDI OUT to QuarkWave MIDI IN. Begin with the listening level low. Play and release a note; the Uno starts from its own built-in default sound when no Pico is present. That is different from the Pico's **Warm Pad** factory preset.
+
+Try pitch bend, sustain, and a few CC controls. These changes live in the Uno until it is reset or another sound is loaded; the Uno has no user patch files. If a note hangs, send **All Notes Off (CC123)** or **All Sound Off (CC120)** from your controller. For the current breadboard, direct USB MIDI is the practical no-Pico route when the composite firmware is installed.
 
 ## Play over Wi-Fi with the Pico attached
 
-1. Power both boards and wait until the browser reports **Uno: Connected to Pico**. Keep the controller and Pico on the same reachable network.
-2. In your RTP-MIDI software, connect to the Pico's `QuarkWave` session on UDP port `5004`. If discovery does not show it, use the Pico's network address. For exact Mac and Windows steps, see [Network MIDI setup](network-midi-setup.md).
-3. Connect one wireless controller at a time. If it disconnects while notes or its sustain pedal are held, the Pico releases both on the Uno. The sound follows its release setting; a pedal held from the browser or DIN remains in effect. A silent network loss may take until the RTP session times out to be recognized; use **Panic** if you need an immediate release.
-4. Send a note, then release it. **Expected from source:** the Pico forwards both messages over its wired MIDI link. Its first sound message marks external activity so a clean Uno startup does not automatically replace a wireless-controlled sound. The message and disconnect paths have passed a two-board diagnostic; audible output remains untested. [Pico gateway](../QuarkWave_UI_MIDI/QuarkWave_UI_MIDI.ino), [Uno receiver](../QuarkWave_MIDI/QuarkWave_MIDI.ino).
+1. Power both boards and open the panel to check **Uno: Connected to Pico**.
+2. Connect one RTP-MIDI peer to the Pico's **QuarkWave** session on UDP port **5004**. The [Mac and Windows setup guide](network-midi-setup.md) gives the menu steps.
+3. Choose the network session as your music app's MIDI output. Send a note and release it. The Pico forwards it to the Uno over the wired link.
+
+If the peer disconnects while holding notes or sustain, the Pico releases only that peer's notes and pedal. A silent network failure may take until the RTP session times out; **Panic** on the browser panel provides an immediate manual release.
 
 ## Play and record over one USB cable
 
-With the optional composite image installed, choose **QuarkWave USB MIDI** as the computer's MIDI output and **QuarkWave USB Audio** as its mono audio input. The Uno can be played directly from a DAW without the Pico; its Pico UART remains active if the Pico is attached. USB MIDI has its own note and pedal ownership, so a USB disconnect cannot release the same pitch held by another input. A direct macOS MIDI-send and audio-record check passed under the renamed port; the combined route in Logic Pro and live disconnect behavior still need tests. For Logic steps, see [Sequence and record through the Uno USB cable](network-midi-setup.md#sequence-and-record-through-the-uno-usb-cable).
+With the [composite USB audio/MIDI firmware](../experiments/usb-audio/README.md), set your DAW's MIDI destination to **QuarkWave USB MIDI** and its mono recording input to **QuarkWave USB Audio**. The Uno plays the notes directly and sends generated audio back to the computer. Its connection to the Pico can remain active. The [Logic Pro steps](network-midi-setup.md#sequence-and-record-through-the-uno-usb-cable) show a complete track setup.
+
+Each input owns its own held notes and sustain state. A USB disconnect releases USB-owned notes without cutting off a matching pitch held through DIN or the Pico. MIDI Clock, by itself, does not count as someone changing the sound.
 
 ## Use an external controller while the Pico is present
 
-An external note, CC, bend, or accepted QuarkWave sound command marks standalone activity. If that happens **before** the Pico's boot patch is applied, the Pico keeps the Uno's current sound and the browser shows **Uno: Connected to Pico · standalone sound**. The browser's **Sync Pico patch to Uno** explicitly resets and replaces that sound and held notes. Once a Pico patch has been applied, external MIDI can still play and adjust the Uno, but those changes may not appear in the Pico's patch controls or saved file. [Sync rule](technical-guide.md#patch-lifecycle-and-storage), [musician takeover steps](user-guide.md#take-over-a-standalone-sound).
+If a controller plays or changes the Uno before the Pico sends its startup patch, QuarkWave preserves the Uno's sound. The browser says **Uno: Connected to Pico · standalone sound**. Continue with that sound, load a patch from the panel, or choose **More actions → Sync Pico patch to Uno** when you want to replace it. Sync resets the current sound and held notes.
+
+After a Pico patch is loaded, other controllers can still play and edit the Uno. A direct MIDI edit may not move the Pico's sliders, so saving the Pico patch does not necessarily capture it. The [musician guide](user-guide.md#take-over-a-standalone-sound) explains the explicit takeover.
 
 ## Follow MIDI Clock
 
-1. In the Pico's Explore view, enable **Use external MIDI clock**; or send QuarkWave Program Change `100` to the Uno. Clock pulses alone do not select external tempo. Program Change `101` selects internal tempo. Some controller menus display program numbers one higher than the MIDI data byte; verify the transmitted byte with a MIDI monitor. [Tempo commands](technical-guide.md#program-change-and-sysex-by-input).
-2. Set your controller or sequencer to send MIDI Clock and, for transport-controlled arpeggiation, Start, Continue, and Stop. Hold notes with the arpeggiator enabled. **Expected from source:** Start begins at the first step, Continue resumes, and Stop releases the current arp note while retaining held keys. Direct notes remain playable when the arpeggiator is off. [Clock behavior](technical-guide.md#external-midi-clock-and-transport).
-3. Test at 40–240 BPM. When DIN, direct USB, and Pico-forwarded RTP send valid recent clock, priority is **DIN → USB → RTP**. After two seconds without pulses from the selected source, the Uno switches to another recent source or holds the last valid tempo. It starts at 120 BPM before receiving a valid clock. These timing outcomes are hardware untested. [Clock implementation](../QuarkWave_MIDI/QuarkWave_MIDI.ino).
+1. In **Explore**, enable **Use external MIDI clock**, or send QuarkWave Program Change **100**. Clock pulses alone do not select external tempo. Program Change **101** returns to internal tempo.
+2. Send MIDI Clock from the controller. For arpeggiator transport, send **Start**, **Continue**, and **Stop** as well. Start resets the pattern, Continue resumes, and Stop releases its current note while preserving the keys you hold.
+3. Use a tempo from **40–240 BPM**. If several inputs send valid clock, the Uno prefers **DIN → direct USB → RTP**. When a clock disappears for two seconds, it chooses another recent input or keeps the last valid tempo. Until the first valid clock, it uses 120 BPM.
+
+Some controller menus display Program Change numbers one higher than the MIDI data byte. If a command seems wrong, use a MIDI monitor to inspect the transmitted number. [Clock design](technical-guide.md#external-midi-clock-and-transport).
 
 ## QuarkWave-specific sound commands
 
-External DIN, direct USB, and RTP devices may send the documented sound Program Changes `100–103`, `110–112`, and SysEx commands `01–03`; see the [exact byte table](technical-guide.md#program-change-and-sysex-by-input). Configure a controller to transmit those bytes if you need tempo source, delay sync, vibrato waveform, internal BPM, LFO routing, or chorus depth. Factory-preset selection is a Pico patch operation; generic Program Change numbers do not select the Pico's eight factory presets. Visualization, reset, and handshake commands are ignored from direct USB and rejected from RTP peers; the Pico sends them only for its own UI and link management. QuarkWave does not forward its custom messages to other synths. [DIN handlers](../QuarkWave_MIDI/QuarkWave_MIDI.ino), [USB receiver](../experiments/usb-audio/UsbMidiInput.h), [Pico RTP gateway](../QuarkWave_UI_MIDI/QuarkWave_UI_MIDI.ino).
+Ordinary CCs cover most sound controls. A controller that can send custom messages may also use QuarkWave Program Changes **100–103** and **110–112**, or SysEx commands **01–03**, to select tempo source, delay sync, vibrato wave, internal BPM, LFO routing, and chorus depth. The [exact bytes and input rules](technical-guide.md#program-change-and-sysex-by-input) are in the technical guide.
+
+Generic Program Changes do **not** choose the Pico's eight factory patches. Display, reset, and handshake commands are reserved for the Pico link, and QuarkWave does not forward custom commands to other synths.

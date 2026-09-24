@@ -19,7 +19,7 @@
 
 Use the [hardware test log](hardware-test-log.md) to record observations for each assembled revision.
 
-The older-panel deployment gap was resolved on 2026-09-23: the panel loaded after flashing the Pico W, and its then-current labels reached **Pico: Connected** / **Uno: Connected to Pico · sound loaded**. The current source shortens the normal Uno label to **Uno: Connected to Pico**; refreshed guide images are simulated, and a new hardware upload has not been performed. Automated browser checks cover controls and keys. The explicit-sync link failure has been reproduced, fixed, and retested on both boards; physical A0 output and per-command Uno reception checks remain open.
+The browser and full illustrated Help were uploaded to the Pico on 2026-09-23. A live check showed **Pico: Connected**, **Uno: Connected to Pico**, the preserved user patch, and working guide and LED-image routes. The explicit-sync link failure was fixed and retested earlier. The physical A0 output and per-command audible responses still need their own checks.
 
 ## Hands-on acceptance pass, when both boards are available
 

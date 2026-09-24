@@ -1,135 +1,126 @@
-# QuarkWave MIDI: musician guide
+# Play and shape sounds
 
-**For:** development testers with an assembled Pico W web controller and Uno R4 sound module.  
-**Status:** source-reviewed, partial two-board check (firmware snapshot: 2026-09-23). If a step differs on your unit, record it in [Documentation gaps](documentation-gaps.md).
+QuarkWave is a four-voice synth built around an Arduino Uno R4. Its Pico W companion gives you a keyboard, sound controls, patches, and Help in any browser on the same network. You can also play the Uno from an external MIDI controller. This guide stays close to the things you do while making music; the [technical guide](technical-guide.md) explains what happens inside.
 
-QuarkWave is a four-voice digital synthesizer. The Pico W hosts the browser panel and remembers patches; the Uno R4 makes the sound. The browser's keyboard and controls reach the Uno through the Pico. The Uno also has separate MIDI inputs. Start with the [quick start](quick-start.md) if this is your first session. The [sound-design lessons](sound-design.md) provide guided listening exercises; the [external MIDI guide](external-midi-guide.md) covers playing the Uno without the browser, and [Network MIDI setup](network-midi-setup.md) explains Mac, Windows, and Logic Pro connections. See the [technical guide](technical-guide.md) for message details.
+If this is your first session, take the five-minute [quick start](quick-start.md) first.
 
 ## Get connected and play a note
 
-1. Power both boards. If the optional Uno USB-audio build is installed, use its [mono input in Logic Pro](network-midi-setup.md#record-the-sound-while-playing-from-the-pico-page) at a low listening level. The photographed build has no physical A0 line output yet; without the USB-audio build, use the Uno LED matrix to check note activity while the [proposed line stage](connection-guide.md#proposed-mono-line-output-from-uno-a0) remains unbuilt.
-2. Put your phone or computer on the same Wi-Fi network configured for the Pico W. Open `http://quarkwave.local/`. If the name does not resolve, ask the tester or builder for the Pico's IP address and open `http://<Pico-IP>/`.
-3. Wait for **Pico: Connected** and **Uno: Connected to Pico**. The first label confirms the browser connection to the Pico. The second means the Uno answered the Pico and acknowledged the selected sound settings. The separate **RTP-MIDI** label shows whether a wireless controller has joined the Pico session; it can say **No controller** while the browser keyboard works. These labels do not verify the audio path.
-4. Play the on-screen keyboard. You can also use the computer keys **A W S E D F T G Y H U J** while focus is outside text fields. Use **−** and **+** beside the keyboard to change its octave. Set **Velocity** from 1 to 127 beside the keyboard; the number is the MIDI Note On velocity for the next note. To choose another sound, select a patch and choose **Load patch**.
+1. Power both boards. Open `http://quarkwave.local/` on a phone or computer connected to the Pico's network. If the name does not work, use the Pico's IP address.
+2. Look for **Pico: Connected** and **Uno: Connected to Pico**. The first confirms the browser can reach the Pico; the second confirms the Pico and Uno are exchanging MIDI messages. The separate RTP-MIDI label tells you whether a wireless MIDI controller has joined.
+3. Play the on-screen keyboard, or use **A W S E D F T G Y H U J** on a computer keyboard. Use **−** and **+** to move by octaves.
+4. Set **Velocity** beside the keyboard. A low number plays a gentler new note; 127 is the highest MIDI velocity. The setting starts at 100 when the page opens. Changing it while a note is held affects the *next* note, not the one already playing.
 
-**Expected from source:** the Pico sends note-on and note-off messages to the Uno. Closing a browser connection releases notes held by that connection. The browser keyboard starts at velocity 100 on each page load. Changing it affects new pointer, on-screen key, and computer-key notes; notes already held keep their original velocity. Computer-note keys still work while the Velocity slider has focus. This setting is not saved with a patch. Sound and level remain hardware checks. [Browser keyboard](../QuarkWave_UI_MIDI/QuarkWave_UI.h), [Pico note handling](../QuarkWave_UI_MIDI/QuarkWave_UI_MIDI.ino).
+The Uno's LED matrix offers a quick visual check when a note arrives. To hear the current breadboard build, use the Uno's **QuarkWave USB Audio** input with a music app such as Logic Pro; the [connection guide](connection-guide.md) explains why the proposed physical A0 line jack is not yet an option.
 
-If the Uno label says **Connected to Pico · standalone sound**, it has received notes or controls from another MIDI input. Its current sound is left alone. See [Take over a standalone sound](#take-over-a-standalone-sound) if you want the Pico's selected sound instead. If either connection is missing, see [When something goes wrong](#when-something-goes-wrong).
+If the Uno says **Connected to Pico · standalone sound**, it has already been played or controlled through another MIDI input. QuarkWave leaves that sound in place. You can play it as it is, load a different patch, or deliberately [sync the Pico sound](#take-over-a-standalone-sound).
 
 ## Find your way around the panel
 
-The Perform, Shape, Explore, All controls, Help, and Save As images are source-rendered simulations with a connected status and Warm Pad values. They show control locations, not a live post-upload check or audible sound. The Save As dialog was opened without writing a patch.
+The patch strip and keyboard stay in place as you change views. Switching views does not interrupt a held key or reset a control.
 
-![Connected Perform view showing the connection and patch strip, shared keyboard, and quick controls](images/perform-simulated.png)
-
-*Perform: keep the keyboard, patch actions, volume, cutoff, morph, arpeggiator and sustain within reach.*
-
-| Area | What it does |
+| View | Reach for it when you want to… |
 | --- | --- |
-| **Patch and connection strip** | Stays at the top in every view. Separate labels show the browser–Pico and Pico–Uno connections. Selects one of eight user slots (`0–7`) or a read-only factory sound. **Load patch** sends the chosen sound to the Uno; **Save patch** writes a user slot on the Pico. With a factory sound selected, the button becomes **Save As**. **Randomize** is beside the patch buttons. **More actions** contains Commit snapshot, Load committed sound, and Sync Pico patch to Uno. |
-| **Perform** | Large keyboard and quick controls for volume, cutoff, morph, arpeggiator and sustain. Choose this view for playing. |
-| **Shape** | Oscillator and texture, envelope, filter, then voice response. Waveform and envelope drawings preview control settings. |
-| **Explore** | Tempo, arpeggiator details, LFO routing, vibrato, effects and Uno LED matrix views. |
-| **All controls** | Puts the Shape and Explore controls on one scrollable page, like a classic synth panel. Use it when programming across several sections. |
-| **Help** | Opens the nine complete onboard guides: Quick start, Musician guide, Patch book, Sound design lessons, Uno LED display, External MIDI, Mac, Windows & Logic, Technical guide, and Connection guide. The Pico serves their text and illustrations locally, so no PDF or separate download is needed. |
-| **Keyboard** | Stays mounted while you switch views; plays notes from the page or computer keys. Octave buttons and the 1–127 Velocity control are beside it. |
+| **Perform** | Play with volume, cutoff, morph, sustain, and the arpeggiator within easy reach. |
+| **Shape** | Work from oscillator and noise through envelope, filter, glide, and voice response. |
+| **Explore** | Add LFO motion, vibrato, rhythm, effects, and choose an Uno LED view. |
+| **All controls** | See the full synth panel together while programming a sound. |
+| **Help** | Read the complete guides and illustrations without leaving the instrument. |
 
-Select **Perform**, **Shape**, **Explore**, **All controls**, or **Help** to change the layout. The selected view is remembered in this browser; it is not part of the patch. The sound and held notes continue across view changes, including Help. All controls moves the same sound controls onto one page, so their values do not reset when you switch back. The Uno's 12×8 LED matrix can show **Status**, **VU meter**, or **Scope** from Explore or All controls. Status shows four voice bars; VU shows several recent loudness bars for the mono sound; Scope shows a moving trace. Those buttons select its display mode; they do not change the sound. The [Uno LED display guide](led-display-guide.md) explains the top-row status lights and each view. **Panic** stays in the top strip and sends All Sound Off if a note hangs. [Panel and view switching](../QuarkWave_UI_MIDI/QuarkWave_UI.h), [Pico message handler](../QuarkWave_UI_MIDI/QuarkWave_UI_MIDI.ino).
+![Perform view with patch strip, keyboard, and quick controls](images/perform-simulated.png)
 
-![Connected All controls view showing the complete sound engine, modulation, effects and LED matrix sections on one page](images/all-controls-simulated.png)
+*Perform keeps the controls you are most likely to touch during a song beside the keyboard.*
 
-*All controls: one scrollable work surface for the full instrument. The patch strip and keyboard remain above the controls.*
+![All controls view with sound, modulation, and effects in one place](images/all-controls-simulated.png)
 
-![Simulated Help view with topic navigation and onboard guides below the shared keyboard](images/help-simulated.png)
+*All controls is the wide workbench. The same controls return to Shape and Explore when you change views.*
 
-*Help: choose a topic page without leaving the instrument. The complete guides, including the LED illustrations, schematics and protocol tables, load from the Pico when selected. The PDF editions are not served by the Pico.*
+The pictures of the browser panel are illustrations made from the UI; the connection labels and patch names in them are examples.
+
+![Help view with the Uno LED guide open below the shared keyboard](images/help-simulated.png)
+
+*The Help view loads the full guide and its photographs and diagrams from the Pico.*
 
 ## Build a sound
 
-![Connected Shape view showing oscillator, envelope, filter, and voice controls](images/shape-simulated.png)
+A good way to learn QuarkWave is to load a factory patch and change one thing at a time. **Pluck** makes envelope changes easy to hear; **Warm Pad** is useful for slow filter and modulation changes. The [patch book](patch-book.md#factory-presets) introduces all eight starting sounds.
 
-*Shape: follow the sound from oscillator and envelope to filter and voice response. The drawings preview settings rather than measured audio.*
+![Shape view with oscillator, envelope, filter, and voice controls](images/shape-simulated.png)
 
-Start with a loaded patch and make one change at a time. The [patch book](patch-book.md) describes all eight factory sounds and gives five suggested variations to try. These are exploratory steps; the audible results have not been checked on hardware.
+1. Load **Pluck** and play the same note several times. In **Shape**, move **Morph**. It blends the oscillator's shapes. **Unison** layers up to three oscillators for each played note; **Detune** spreads those layers in pitch.
+2. Turn **Filter on**, then lower **Cutoff** to take away high frequencies. Raise **Resonance** to emphasize the area near the cutoff. Compare a held note before and after each change.
+3. Lengthen **Attack** for a slower beginning. Lengthen **Release** to let the note fade after you let go. **Decay** controls the move from the initial level toward **Sustain**, the level held while the key remains down.
+4. Add **Noise** for a rougher texture or **Glide** for pitch travel between notes. Try short notes, long notes, and a chord before deciding what to keep.
 
-1. In **Shape**, adjust **Morph** while holding a note. It moves among the Uno's oscillator shapes. Use **Unison** to layer up to three oscillators per voice and **Detune** to spread them.
-2. Enable **Filter on**. Lower **Cutoff** to remove high frequencies; raise **Resonance** to emphasize the filter's cutoff region.
-3. In **Envelope**, lengthen **Attack** for a slower start, or lengthen **Release** for a longer fade after you lift the key.
-4. Add a little **Glide** for pitch movement between notes, or **Noise** for a noise layer. Adjust **Master volume** at a comfortable level. The quick volume, cutoff and morph controls in Perform adjust these same settings.
-5. Play short and long notes to compare the result. Try keyboard **Velocity** at 1, 100, and 127 to hear the response of new notes. Save only when you want to keep the current sound settings.
-
-QuarkWave has four note voices. When more notes are requested, the selected **Voice Steal** mode decides which voice makes room. **Velocity Curve** changes how strongly note velocity affects level. [Uno voices](../QuarkWave_MIDI/QuarkWave_MIDI.ino), [Uno control map](../QuarkWave_MIDI/QuarkWave_MIDI.ino).
+QuarkWave can sound four notes at once. **Unison** changes the number of oscillators within a voice, not the number of playable notes. When you ask for a fifth overlapping note, **Voice steal** chooses which voice is reused. **Velocity curve** changes how strongly playing velocity affects level.
 
 ## Add movement and rhythm
 
-![Connected Explore view showing tempo, modulation, vibrato, effects, and LED matrix controls](images/explore-simulated.png)
+![Explore view with modulation, arpeggiator, effects, and LED controls](images/explore-simulated.png)
 
-*Explore: set modulation and rhythm, then add effects. The shared keyboard remains above the controls.*
+**LFO 01** is your main source of repeating motion. Raise **Cutoff amount** and set a slow **Rate** to hear the filter move. Then return that amount to zero and try **To morph** or **To amplitude** to hear the difference between tone movement and volume movement. **To detune** moves the unison spread. **Velocity to cutoff** connects harder playing to a brighter filter; **Noise to cutoff** adds less regular movement.
 
-1. In **Explore**, raise **Cutoff amount** under Modulation, then adjust **Rate**. The first LFO moves filter cutoff; **To morph**, **To amplitude**, and **To detune** add other destinations.
-2. Turn on **Sync LFO to tempo** to derive the first LFO rate from the active tempo. Leave **Use external MIDI clock** off and set **Internal BPM**, or enable it for external MIDI clock. An external DIN device, or an RTP device connected to the Pico, must send MIDI Clock; QuarkWave supports 40–240 BPM and gives DIN priority when both inputs send clock. If pulses stop, the last tempo continues. External timing has not been hardware-tested here.
-3. Use **Velocity to cutoff** to make harder playing brighten the filter. **Noise to cutoff** adds random movement.
-4. Use **Vibrato rate**, **Vibrato amount**, and **Vibrato wave** to add movement. The wave can be sine, triangle, or square.
-5. For repeated notes, select an **Arpeggiator** mode and hold notes. **Arp division** changes step spacing; **Arp gate** changes note length. With external clock selected, MIDI Start resets the pattern to its first step, Continue resumes it, and Stop releases its sounding step while keeping held keys. Turn the mode off to return to normal held-note playing. The same mode selector is available in Perform.
+**Vibrato** uses a second LFO. Start with a small **Vibrato amount**, then adjust its rate and choose a sine, triangle, or square wave. The two LFOs have separate jobs, so you can make a slowly changing filter and a quicker pitch wobble at the same time.
 
-**Sustain** holds released notes until it is turned off. The synth also accepts MIDI sustain pedal CC64. [Uno modulation and arpeggiator](../QuarkWave_MIDI/QuarkWave_MIDI.ino), [Uno sustain](../QuarkWave_MIDI/QuarkWave_MIDI.ino).
+For repeating notes, choose an **Arpeggiator** mode and hold a chord. **Arp division** sets the step spacing; **Arp gate** sets how long each step lasts. Start with **Internal BPM**. If you want a sequencer to set the beat, enable **Use external MIDI clock** and send clock from DIN, direct USB MIDI, or a controller connected to the Pico over RTP-MIDI. Clock messages alone do not switch QuarkWave to external tempo. The [external MIDI guide](external-midi-guide.md#follow-midi-clock) explains Start, Continue, Stop, and source priority.
+
+**Sustain** holds released notes until you turn it off. An external pedal can also send MIDI CC64.
 
 ## Use effects
 
-| Effect | Try this | What the source implements |
-| --- | --- | --- |
-| **Chorus** | Raise **Mix**, then adjust **Depth**. | Two moving delayed taps blended with the dry signal. |
-| **Delay** | Raise **Mix**, adjust **Time** and **FB**. | An echo with feedback; **Sync (1/16)** sets time to a sixteenth note of the active tempo. |
-| **Bitcrush** | Raise **Mix**, then lower **Bits** or change **Rate**. | Quantization and sample holding for a grainier sound. |
-| **Tremolo** | Raise **Depth**, then set **Rate**. | Periodic level movement. |
-| **Drive / Fold** | Raise each control gradually. | Saturation and wavefolding before the bitcrush and tremolo stages. |
+The effects are easiest to learn one at a time. Start with a modest listening level, because combining them can change the output level.
 
-The source places chorus, drive/fold, bitcrush, and tremolo before delay. Use modest settings first because combined effects can change level substantially. [Uno audio path](../QuarkWave_MIDI/QuarkWave_MIDI.ino).
+| Effect | First experiment | What you are hearing |
+| --- | --- | --- |
+| **Chorus** | Raise **Mix**, then move **Depth**. | Two short, moving delayed copies widen and animate the sound. |
+| **Drive / Fold** | Raise either amount gradually. | Drive rounds and saturates peaks; fold turns peaks back into the waveform. |
+| **Bitcrush** | Raise **Mix**, lower **Bits**, then change **Rate**. | Fewer amplitude steps and held samples make a rougher texture. |
+| **Tremolo** | Raise **Depth**, then set **Rate**. | Repeating changes in loudness. |
+| **Delay** | Raise **Mix**, set **Time** and **FB**. | Echoes; **Sync (1/16)** ties repeat time to the chosen tempo. |
+
+The sound passes through chorus, drive/fold, bitcrush, tremolo, then delay. The [sound-design lessons](sound-design.md#5-follow-the-effects-chain) offer short comparisons if you want to hear each stage clearly.
 
 ## Explore a random sound
 
-1. Set a comfortable listening level, then choose **Randomize** in the patch strip.
-2. Wait for the panel controls to update. Play a new note to hear the new live sound; Randomize can use the full range of each effect and volume control.
-3. Adjust the result, then save it to a user slot if you want to keep it. Changing patches before saving discards the random sound.
-
-**Expected from source:** the browser sends one `randomize` request. The Pico chooses values within the Uno's MIDI limits, sends the patch to the Uno, and returns `patchData` for the panel. It leaves the selected patch slot, sustain-pedal state, and keyboard Velocity alone. Audible results remain hardware untested. [Pico Randomize](../QuarkWave_UI_MIDI/QuarkWave_UI_MIDI.ino), [browser action](../QuarkWave_UI_MIDI/QuarkWave_UI.h).
+Select **Randomize** beside the patch buttons, then play a *new* note. QuarkWave picks a complete set of valid sound-control values and updates the panel. It can choose strong effect and volume settings, so turn down your listening level first. Adjust the promising parts and save the result if you want to keep it. Randomize leaves your chosen patch slot, sustain pedal, and browser keyboard Velocity alone.
 
 ## Save, load, and recover patches
 
-1. Choose an empty user slot numbered `0–7`, enter a name of up to 16 characters, and select **Save patch**. The Pico creates a patch file for that slot. Selecting an occupied user slot and choosing **Save patch** updates that slot.
-2. Select that slot and choose **Load patch** to send its stored settings to the Uno. The Pico remembers the last loaded factory or user patch for the next boot.
-3. To keep a separate snapshot of the current sound, open **More actions** and select **Commit snapshot**. **Load committed sound** restores that snapshot from the Pico's separate commit file. The strip reports the Pico's confirmation.
-4. To explore, select a factory preset from the [patch book](patch-book.md#factory-presets) and choose **Load patch**. Factory sounds appear after the user slots and cannot be overwritten. To keep an edited factory sound, enter a name, choose **Save As**, select a user slot in the dialog, and choose **Save to slot**. If that slot is occupied, confirm the replacement. The panel reports whether the save succeeded.
+The eight factory sounds are permanent starting points. Eight separate **user slots**, numbered 0–7, hold the sounds you save. A new Pico starts with empty user slots; an existing instrument may already have sounds in them.
 
-![Staged Save As dialog listing occupied and empty user slots](images/save-as-simulated.png)
+- **Load:** Choose a factory or user sound and select **Load patch**. This replaces unsaved edits and sends the selected settings to the Uno.
+- **Save a user sound:** With a user slot selected, name your sound and select **Save patch**. This updates that slot.
+- **Save a factory edit or make a copy:** Name your sound, select **Save As**, choose a user slot, and select **Save to slot**. Confirm if the destination already contains a patch. A factory preset cannot be overwritten.
+- **Keep a temporary checkpoint:** **More actions → Commit snapshot** records a separate copy. **Load committed sound** brings it back. A commit is useful while experimenting, but give a finished sound a user slot as well.
 
-*Save As requires a user-slot choice. The example shows that legacy `P0` and unreadable files are occupied; neither is treated as empty by its name.*
+![Save As dialog with empty and occupied user slots](images/save-as-simulated.png)
 
-**Save** writes the Pico's current patch data. Controls changed outside the browser may not be reflected in that data. The Uno does not store these patch files. [Patch loading](../QuarkWave_UI_MIDI/QuarkWave_UI_MIDI.ino), [patch writing](../QuarkWave_UI_MIDI/QuarkWave_UI_MIDI.ino), [commit handling](../QuarkWave_UI_MIDI/QuarkWave_UI_MIDI.ino).
+*Save As makes the destination explicit. A slot with an existing file counts as occupied even if its name looks like an unused placeholder.*
+
+The Pico remembers the last patch you loaded or saved for startup. Browser keyboard Velocity and the live sustain pedal are performance settings, so they are not stored in the patch. Changes made directly on the Uno from another MIDI controller may not appear in the Pico's controls or saved file.
 
 ## Take over a standalone sound
 
-**Source-reviewed, hardware untested.** The Uno can be played through its separate DIN input without the Pico. RTP-MIDI is available when the optional Pico is attached and powered. If it has received notes or controls, the browser reports **Uno: Connected to Pico · standalone sound** and the Pico does not replace its sound automatically. MIDI clock and transport messages alone do not count as standalone activity. External devices can also send QuarkWave sound Program Changes and SysEx; accepted sound commands count as standalone activity.
+If another controller reaches the Uno before the Pico applies its patch, QuarkWave preserves that sound. The browser shows **Uno: Connected to Pico · standalone sound**.
 
-1. Stop playing and release held notes on the external controller.
-2. In the browser, open **More actions** and choose **Sync Pico patch to Uno**.
-3. Read the warning, then confirm if you want to reset the Uno and replace its current sound and held notes with the Pico's current patch.
-4. Wait for **Uno: Connected to Pico**. If the panel reports **Sound sync failed**, check the return connection and try again.
+1. Release notes on the other controller.
+2. Open **More actions → Sync Pico patch to Uno**.
+3. Read the warning and confirm. Sync resets the Uno's current sound and held notes, then sends the Pico's selected patch.
+4. Wait for **Uno: Connected to Pico**. If sync fails, check the Uno connection and try again.
 
-**Expected from source:** the Pico sends a reset and full patch transfer, then waits for the Uno to acknowledge it. Loading a patch or committed sound is another explicit way to change the Uno's sound. [Pico sync](../QuarkWave_UI_MIDI/QuarkWave_UI_MIDI.ino), [Uno status](../QuarkWave_MIDI/QuarkWave_MIDI.ino).
+Loading a patch is another deliberate way to replace the current sound. MIDI clock by itself never triggers a sound takeover.
 
 ## When something goes wrong
 
-| Symptom | First check |
+| What you see or hear | Try this |
 | --- | --- |
-| `quarkwave.local` does not open | Confirm the Pico is powered and on the configured Wi-Fi. Try its IP address. The firmware does not provide a browser Wi-Fi setup flow. |
-| **Pico: Not connected** | The browser has not connected to the Pico's WebSocket service on port `8081`. Reload the page and check the Pico's Wi-Fi connection. |
-| **Uno: Not connected to Pico** | The Pico has not received a handshake reply. Ask the builder to check Uno power, both UART wires, common ground, and the level shifter on Uno TX → Pico RX. |
-| Both labels show connected, but no sound | Check the listening level and assembled audio connection. The handshake confirms a firmware response, not audio output. |
-| **Uno: Connected to Pico · standalone sound** | An external DIN or RTP controller has sent notes or controls. Continue playing that sound or use **Sync Pico patch to Uno** for an explicit takeover. |
-| **Uno: Sound sync failed** | The Uno did not confirm the sound transfer after one retry. Check the return wire and use **Sync Pico patch to Uno** again. |
-| Note continues after release | Select **Panic**. This sends MIDI CC120, All Sound Off, and clears notes tracked by the Pico for browser clients. |
-| Patch seems different after restart | On a clean Uno startup, the Pico should send its selected boot patch once the Uno replies, even before the browser opens. If the Uno reports standalone sound, its external-controller settings take precedence until you explicitly sync. |
-| **Save As** reports a failure | Check the named user slot and try again. An unreadable existing file counts as occupied; preserve it for the builder rather than assuming the slot is empty. |
+| The page does not open | Check Pico power and Wi-Fi, then try its IP address instead of `quarkwave.local`. |
+| **Pico: Not connected** | Reload the page and check the Pico's network connection. |
+| **Uno: Not connected to Pico** | Check Uno power. On the breadboard, check both UART paths, the shared ground, and the level shifter. |
+| Both boards show connected but you hear nothing | Check the audio input, monitoring, speaker level, and **Volume**. A MIDI connection does not by itself provide an audio connection. |
+| **Standalone sound** appears | Keep playing that sound, load another patch, or use explicit **Sync Pico patch to Uno**. |
+| **Sound sync failed** appears | Check the Uno return wire and try Sync again. |
+| A note hangs | Select **Panic** in the top strip. |
+| Save As fails | Check the selected user slot and the message in the patch strip. An unreadable existing file is treated as occupied, not empty. |
 
-For any mismatch, record the firmware snapshot, which board was powered, the selected patch, the exact steps, and what happened. Do not treat a source-reviewed procedure as a passed hardware test.
+For Mac, Windows, and Logic connections, go to [Network MIDI setup](network-midi-setup.md). For the matrix lights, see [Reading the Uno LED display](led-display-guide.md).

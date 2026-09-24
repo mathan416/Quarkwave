@@ -1,47 +1,46 @@
-# QuarkWave MIDI documentation
+# QuarkWave guides
 
-**Audience:** development testers using an assembled instrument, and developers extending it.  
-**Status:** source-reviewed, partial hardware check. The Pico RTP gateway has passed a live invitation, note, disconnect-release, standalone-state, and explicit-sync smoke check; clock timing remains untested. These pages describe firmware behavior inspected on **2026-09-23**. Browser, USB, targeted Uno timing, and owner-observed LED matrix checks have run on the two-board build. The owner confirmed the earlier optional Uno USB-audio image in Logic Pro; a newer composite image passed one simultaneous USB MIDI note and audio recording on macOS. The proposed physical A0 audio circuit is still unbuilt and untested.
+QuarkWave is a four-voice digital synth with an **Uno R4** sound engine and an optional **Pico W** browser controller. These guides have two doors: one for playing and shaping sounds, and one for exploring how the instrument is built.
 
-## Choose a guide
+## If you want to play
 
-- [Quick start](quick-start.md) — first note, first factory sound, and first saved variation on an assembled instrument.
-- [Musician guide](user-guide.md) — connect, play, shape sounds, use effects, and manage patches. Start here if you know synth controls but do not need firmware internals.
-- [Patch book](patch-book.md) — eight built-in sounds, what shapes each one, and five new patch recipes to try.
-- [Sound-design lessons](sound-design.md) — short listening exercises for oscillator, envelope, filter, movement, and effects.
-- [Uno LED display](led-display-guide.md) — read the top-row connection lights, voice bars, output meter, and waveform view.
-- [External MIDI controllers](external-midi-guide.md) — play the Uno alone, send clock, and use its supported sound commands.
-- [Network MIDI setup](network-midi-setup.md) — connect a Mac or Windows RTP-MIDI session to the Pico and use Logic Pro with QuarkWave.
-- [Technical guide](technical-guide.md) — board roles, signal flow, WebSocket and MIDI messages, patch files, and firmware behavior.
-- [Diagram style](diagram-style.md) — visual conventions for maintaining the guide figures.
-- [Connection guide](connection-guide.md) — photographs of the current USB-powered build, known board wiring, and proposed isolated DIN, line, and TDA1308 headphone connections.
-- [Hardware test log](hardware-test-log.md) — repeatable checks and space for measured results.
-- [Documentation gaps](documentation-gaps.md) — source discrepancies and tasks that need a product decision or hardware check before the guides can make stronger promises.
+1. [Start playing](quick-start.md) — power up, find the panel, play a note, and save a variation.
+2. [Play and shape sounds](user-guide.md) — the complete musician guide to the five views, controls, effects, and patches.
+3. [Sounds to start from](patch-book.md) — eight factory patches and five new recipes.
+4. [Learn the sound by listening](sound-design.md) — short exercises that make each control easier to hear.
+5. [Reading the Uno LED display](led-display-guide.md) — photographs and diagrams for the voice, VU, Scope, and top-row lights.
 
-The **panel** images are source-rendered simulations of the current page, including the Uno LED display page of its nine-guide Help, using the built-in Warm Pad values and simulated connected status. The Save As dialog was opened without writing a patch. They document layout and labels, not a fresh hardware check or audible output. Help is embedded in the Pico page; the PDF editions are not uploaded to it. The Help center serves the complete musician and technical guides, including the LED photographs, matrix illustrations, wiring diagrams, and protocol tables, directly from the Pico. The Markdown files are the editable source for these pages. The PDF editions, test log, documentation gaps, and diagram-maintenance notes remain in the repository. The [connection guide](connection-guide.md) contains owner-supplied photographs of the actual build; its line-output diagram is a proposed circuit, not an as-built photo.
+## If you want to connect more gear
 
-## Updating onboard Help
+- [Play from another controller](external-midi-guide.md) — DIN, direct USB MIDI, wireless MIDI, and clock.
+- [Connect a computer](network-midi-setup.md) — macOS, Windows, and Logic Pro.
+- [How QuarkWave is connected](connection-guide.md) — the photographed Pico–Uno breadboard and the proposed DIN, line, and headphone circuits.
 
-The nine onboard Help guides are generated from the Markdown files above. After editing them or their illustrations, run `npm install` once in `QuarkWave MIDI`, then `npm run build:help`. This updates the Help navigation in `QuarkWave_UI.h` and the compressed pages and images in `QuarkWave_Help.h`. Commit the source Markdown, onboard image thumbnails, and generated header together. The Pico stores these guide assets in program flash; patch files remain in LittleFS.
+## If you want to understand or extend it
+
+- [Inside QuarkWave](technical-guide.md) — architecture, patches, input ownership, DSP path, clock, and exact MIDI/WebSocket messages.
+- [Hardware test log](hardware-test-log.md) — measured results and the history of checks on the assembled boards.
+- [Documentation gaps](documentation-gaps.md) — decisions and hardware details still to settle.
+- [Diagram style](diagram-style.md) — conventions used by the circuit and system drawings.
+
+The Pico's **Help** view carries the nine complete playing and technical guides above, with their photographs and diagrams. They load from the Pico as you select them, even without internet access. The Markdown files here are the editable source. PDFs are separate snapshots and are generated only when requested.
+
+## What is on the breadboard
+
+The owner-supplied photographs show both boards powered through their own USB cables and talking over a two-way, level-shifted MIDI UART. The Pico's browser and Uno LED display can be used now. The physical DIN jack, buffered A0 line output, and TDA1308 headphone connection in the connection guide are **proposed circuits**, not parts of that photographed wiring. The optional Uno USB audio/MIDI firmware provides a computer audio route while those circuits are being built.
+
+## Keeping Help in step with the guides
+
+After editing an onboard guide or its image, run `npm install` once from `QuarkWave MIDI`, then `npm run build:help`. The generator updates the navigation in `QuarkWave_UI.h` and creates compressed guide pages and images in `QuarkWave_Help.h`. Commit the Markdown, image thumbnails, and generated header together. Patch files remain in the Pico's LittleFS storage; Help lives in program flash.
 
 ## Firmware snapshot
 
-The two sketches and embedded browser page are the source of truth for these pages:
+This edition describes the MIDI sketches and browser panel as inspected on **2026-09-23**. The table identifies the source files behind the descriptions; the [test log](hardware-test-log.md) records which paths were exercised on hardware.
 
 | Component | Source | SHA-256 |
 | --- | --- | --- |
 | Uno R4 sound engine | [QuarkWave_MIDI.ino](../QuarkWave_MIDI/QuarkWave_MIDI.ino) | `704520258e9bd99105b58392deb69ef9927337d3f8632a63528463bb78854361` |
-| Pico W web controller | [QuarkWave_UI_MIDI.ino](../QuarkWave_UI_MIDI/QuarkWave_UI_MIDI.ino) | `14072f2cd847116681e545bd7dca2acf7f90a26460dcd6d5bc3ff0e5e0b7154e` |
-| Embedded browser panel | [QuarkWave_UI.h](../QuarkWave_UI_MIDI/QuarkWave_UI.h) | `0e4cfa3aba0f7606ec48e55e7ccff9c694e7a64b4160972e04be69b8db75a904` |
+| Pico W controller | [QuarkWave_UI_MIDI.ino](../QuarkWave_UI_MIDI/QuarkWave_UI_MIDI.ino) | `14072f2cd847116681e545bd7dca2acf7f90a26460dcd6d5bc3ff0e5e0b7154e` |
+| Browser panel | [QuarkWave_UI.h](../QuarkWave_UI_MIDI/QuarkWave_UI.h) | `0e4cfa3aba0f7606ec48e55e7ccff9c694e7a64b4160972e04be69b8db75a904` |
 
-The connected controller identified over USB on 2026-09-23 is a **Pico W (RP2040, 2 MB flash)**. Its deployed build uses a 1 MB LittleFS region to match the existing patch storage. The Uno identified as **Arduino UNO R4 WiFi**. Both uploads verified; an earlier live panel check reported a connected Pico and Uno with the existing “Test Pluck” user patch. The deployed panel uses **Uno: Connected to Pico**; a live post-upload check reported that state with no sync failure and preserved user slot 3. Help has its own rose palette and now loads the complete guides and illustrations on demand. An automated browser pass exercised 50 control paths and 41 pointer keys, plus all 12 computer keys at three velocities. The Pico reported changes and the Uno handshake was initially connected, but the Uno does not acknowledge each sound command. A Pico return-message parser fix resolved the reproduced explicit-sync failure in repeated two-board tests. A temporary Uno diagnostic confirmed browser Note On, envelope movement, and a finite pre-DAC signal on one patch; audible output through the proposed physical A0 circuit and per-control sound response remain unverified. The latest Uno LED-status source also runs in the [USB-audio experiment](../experiments/usb-audio/README.md): the Pico link stayed connected during recordings, the owner confirmed the matrix responds to notes, and the older audio-only image worked in Logic Pro. The new composite image also passed a simultaneous Mac USB MIDI/audio test; its Logic workflow still needs a user check. Each new status pixel has not been individually accepted. See the [hardware test log](hardware-test-log.md).
-
-The older sketches under `../QuarkWave/` are outside this documentation baseline. The `secrets.h` files contain local Wi-Fi settings and are deliberately excluded.
-
-## Reading the status labels
-
-**Source-reviewed** means the described path exists in this snapshot. **Hardware untested** on a specific procedure means that procedure still needs a two-board test. The handshake and browser paths with recorded results are identified in the [hardware test log](hardware-test-log.md); physical A0 line-output levels remain unmeasured. A procedure that cannot be established confidently from source is listed in [Documentation gaps](documentation-gaps.md) instead of being presented as a working feature.
-
-## When firmware changes
-
-Recheck the three files above, update the protocol and control tables, walk through the musician tasks on the assembled unit, then change the snapshot date and hashes. Record unresolved changes in the gaps page.
+The older sketches under `../QuarkWave/` are outside this edition. Local `secrets.h` files contain Wi-Fi settings and are excluded from the repository.

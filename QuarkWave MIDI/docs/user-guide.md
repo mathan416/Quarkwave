@@ -31,7 +31,7 @@ The Perform, Shape, Explore, All controls, Help, and Save As images are source-r
 | **Shape** | Oscillator and texture, envelope, filter, then voice response. Waveform and envelope drawings preview control settings. |
 | **Explore** | Tempo, arpeggiator details, LFO routing, vibrato, effects and Uno LED matrix views. |
 | **All controls** | Puts the Shape and Explore controls on one scrollable page, like a classic synth panel. Use it when programming across several sections. |
-| **Help** | Opens ten onboard pages: Start here, Play the panel, Shape a sound, Patches & presets, MIDI & Logic, LED display, Troubleshooting, Connections, Messages & MIDI, and Sound engine. The text is built into the Pico page, so it needs no PDF or separate download. |
+| **Help** | Opens the nine complete onboard guides: Quick start, Musician guide, Patch book, Sound design lessons, Uno LED display, External MIDI, Mac, Windows & Logic, Technical guide, and Connection guide. The Pico serves their text and illustrations locally, so no PDF or separate download is needed. |
 | **Keyboard** | Stays mounted while you switch views; plays notes from the page or computer keys. Octave buttons and the 1–127 Velocity control are beside it. |
 
 Select **Perform**, **Shape**, **Explore**, **All controls**, or **Help** to change the layout. The selected view is remembered in this browser; it is not part of the patch. The sound and held notes continue across view changes, including Help. All controls moves the same sound controls onto one page, so their values do not reset when you switch back. The Uno's 12×8 LED matrix can show **Status**, **VU meter**, or **Scope** from Explore or All controls. Status shows four voice bars; VU shows several recent loudness bars for the mono sound; Scope shows a moving trace. Those buttons select its display mode; they do not change the sound. The [Uno LED display guide](led-display-guide.md) explains the top-row status lights and each view. **Panic** stays in the top strip and sends All Sound Off if a note hangs. [Panel and view switching](../QuarkWave_UI_MIDI/QuarkWave_UI.h), [Pico message handler](../QuarkWave_UI_MIDI/QuarkWave_UI_MIDI.ino).
@@ -42,7 +42,7 @@ Select **Perform**, **Shape**, **Explore**, **All controls**, or **Help** to cha
 
 ![Simulated Help view with topic navigation and onboard guides below the shared keyboard](images/help-simulated.png)
 
-*Help: choose a topic page without leaving the instrument. The Markdown guides retain the detailed build schematics and complete protocol tables; the PDF editions are not served by the Pico.*
+*Help: choose a topic page without leaving the instrument. The complete guides, including the LED illustrations, schematics and protocol tables, load from the Pico when selected. The PDF editions are not served by the Pico.*
 
 ## Build a sound
 

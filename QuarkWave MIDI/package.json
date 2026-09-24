@@ -1,0 +1,11 @@
+{
+  "private": true,
+  "name": "quarkwave-onboard-help",
+  "version": "1.0.0",
+  "scripts": {
+    "build:help": "node tools/build-onboard-help.cjs"
+  },
+  "devDependencies": {
+    "marked": "17.0.5"
+  }
+}

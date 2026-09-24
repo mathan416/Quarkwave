@@ -27,6 +27,7 @@
 #define ONE_PARTICIPANT
 #include <AppleMIDI.h>
 #include "QuarkWave_UI.h"
+#include "QuarkWave_Help.h"
 #include "secrets.h"
 
 struct ParamCCMap;
@@ -1054,6 +1055,7 @@ void setupWebServer() {
     server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
         request->send(200, "text/html; charset=utf-8", INDEX_HTML);
     });
+    registerOnboardHelpRoutes(server);
     
     // API endpoints
     server.on("/api/patches", HTTP_GET, [](AsyncWebServerRequest *request) {

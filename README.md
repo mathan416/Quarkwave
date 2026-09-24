@@ -2,15 +2,15 @@
 
 Quarkwave is a MIDI synthesizer built around two boards: an **Arduino Uno R4 WiFi** generates the sound, and a **Raspberry Pi Pico W** hosts the browser interface and stores patches. You can also play the Uno directly from an external MIDI controller. The MIDI version is the focus of current development.
 
-![Live Quarkwave Perform panel with the shared keyboard and patch controls](QuarkWave%20MIDI/docs/images/perform-simulated.png)
+![Quarkwave Perform panel simulation with the shared keyboard and patch controls](QuarkWave%20MIDI/docs/images/perform-simulated.png)
 
-*The panel image was captured from the connected Pico after the gateway upload. Audio remains unverified; see the [hardware test log](QuarkWave%20MIDI/docs/hardware-test-log.md).*
+*The panel image is rendered from the current embedded page with Warm Pad and a simulated connected status. The [hardware test log](QuarkWave%20MIDI/docs/hardware-test-log.md) records live checks separately.*
 
 ## Current status
 
-The browser panel, Pico–Uno MIDI handshake, and patch sync have been tested on the two-board setup. The Uno's `A0` audio output circuit has **not** been assembled, so audible sound and output levels remain unverified. The [connection guide](QuarkWave%20MIDI/docs/connection-guide.md) separates the current wiring from the proposed line and headphone circuits.
+The browser panel, Pico–Uno MIDI handshake, and patch sync have been tested on the two-board setup. The optional USB-audio experiment worked in Logic Pro on the owner's Mac. The Uno's `A0` audio output circuit has **not** been assembled, so its physical jack output and levels remain unverified. The [connection guide](QuarkWave%20MIDI/docs/connection-guide.md) separates the current wiring from the proposed line and headphone circuits.
 
-The Pico serves the **Perform**, **Shape**, **Explore**, and **All controls** views at `http://quarkwave.local/` when it is connected to the configured network. The Uno is the sound engine; the Pico is the main interface, patch store, and controller. The Uno accepts a separate physical MIDI input; the optional Pico receives RTP-MIDI over Wi-Fi and forwards it to the Uno. See the [external MIDI guide](QuarkWave%20MIDI/docs/external-midi-guide.md). BLE-MIDI is disabled.
+The Pico serves the **Perform**, **Shape**, **Explore**, and **All controls** views at `http://quarkwave.local/` when it is connected to the configured network. The Uno is the sound engine; the Pico is the main interface, patch store, and controller. The Uno accepts a separate physical MIDI input; the optional Pico receives RTP-MIDI over Wi-Fi and forwards it to the Uno. See the [external MIDI guide](QuarkWave%20MIDI/docs/external-midi-guide.md) and [Mac, Windows, and Logic setup](QuarkWave%20MIDI/docs/network-midi-setup.md). BLE-MIDI is disabled.
 
 ## Start here
 
@@ -22,7 +22,7 @@ The Pico serves the **Perform**, **Shape**, **Explore**, and **All controls** vi
 | Inspect the wiring and audio plans | [Connection guide](QuarkWave%20MIDI/docs/connection-guide.md) |
 | See test results and open questions | [Hardware test log](QuarkWave%20MIDI/docs/hardware-test-log.md) and [documentation gaps](QuarkWave%20MIDI/docs/documentation-gaps.md) |
 
-The [documentation index](QuarkWave%20MIDI/docs/README.md) lists every guide and its firmware snapshot. PDF editions are in [`QuarkWave MIDI/output/pdf/`](QuarkWave%20MIDI/output/pdf/); they are regenerated on request, so Markdown is the latest working copy.
+The Pico panel includes a **Help** view with ten topic pages for playing, sound design, patches, MIDI, troubleshooting, connections, messages, and the sound engine. The [documentation index](QuarkWave%20MIDI/docs/README.md) lists the fuller guides and their firmware snapshot. PDF editions are in [`QuarkWave MIDI/output/pdf/`](QuarkWave%20MIDI/output/pdf/); they are regenerated on request, so Markdown is the latest working copy.
 
 ## All controls in one view
 
@@ -30,7 +30,7 @@ The **All controls** tab puts the sound engine, modulation, effects, and Uno LED
 
 ![Full-page All controls view, from the patch strip and keyboard through sound shaping, effects, and LED matrix controls](QuarkWave%20MIDI/docs/images/all-controls-simulated.png)
 
-*Full-page capture from the connected Pico panel. It shows the controls and connection state, not measured audio output.*
+*Full-page source render with a simulated connected status. It shows the controls and labels, not a fresh hardware measurement.*
 
 ## Project layout
 

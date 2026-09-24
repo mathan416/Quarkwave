@@ -18,10 +18,11 @@ static const char INDEX_HTML[] PROGMEM = u8R"HTML(
   body[data-view="shape"]{--accent:#f4bd79;--accent-soft:rgba(244,189,121,.17);--glow:rgba(182,111,39,.16)}
   body[data-view="explore"]{--accent:#c49afa;--accent-soft:rgba(196,154,250,.18);--glow:rgba(130,74,185,.17)}
   body[data-view="all"]{--accent:#8de9c2;--accent-soft:rgba(141,233,194,.16);--glow:rgba(62,161,123,.15)}
+  body[data-view="help"]{--accent:#8de9c2;--accent-soft:rgba(141,233,194,.16);--glow:rgba(62,161,123,.15)}
   button,input,select{font:inherit}
   button{cursor:pointer}
   button:disabled{cursor:not-allowed;opacity:.48}
-  button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+  button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible,a:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
   [hidden]{display:none!important}
   .app-shell{max-width:1512px;margin:auto;padding:28px clamp(16px,2.6vw,42px) 32px}
   .masthead{display:flex;align-items:center;justify-content:space-between;gap:20px;margin-bottom:23px}
@@ -79,6 +80,49 @@ static const char INDEX_HTML[] PROGMEM = u8R"HTML(
   .all-shape-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
   .all-explore-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
   .all-section{margin-top:25px}.all-section h2{margin:0 0 13px;font-size:23px;letter-spacing:-.035em}
+  .help-links{display:flex;flex-wrap:wrap;gap:9px;margin:0 0 19px}
+  .help-links a{min-height:44px;display:inline-flex;align-items:center;padding:0 15px;border:1px solid #4d6e70;border-radius:12px;background:#1a3338;color:#d5f7ea;font-size:13px;font-weight:750;text-decoration:none}
+  .help-links a:hover{border-color:var(--accent);background:#23444a}
+  .help-section{margin-top:27px;scroll-margin-top:20px}
+  .help-section h2{margin:0 0 6px;font-size:25px;letter-spacing:-.04em}
+  .help-section>p{margin:0 0 15px;color:#b7c9d5;font-size:14px}
+  .help-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+  .help-card h3{margin:0 0 10px;font-size:18px}
+  .help-card p,.help-card li,.help-card dd{color:#c9d7e3;font-size:14px;line-height:1.55}
+  .help-card p{margin:8px 0 0}.help-card ol,.help-card ul{margin:0;padding-left:22px}.help-card li+li{margin-top:6px}
+  .help-card strong,.help-card dt{color:#f2f8fd}.help-card dl{margin:0}.help-card dt{font-size:13px;font-weight:800}.help-card dd{margin:0 0 10px}
+  .help-wide{grid-column:1/-1}
+  .help-flow{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:12px 0;color:#d5f7ea;font-size:13px;font-weight:750}
+  .help-flow span{padding:8px 11px;border:1px solid #486b70;border-radius:10px;background:#142c35}
+  .help-flow b{color:var(--accent)}
+  .help-layout{display:grid;grid-template-columns:220px minmax(0,1fr);align-items:start;gap:20px}
+  .help-content{min-width:0}
+  .help-nav{position:sticky;top:16px;display:grid;gap:4px;padding:15px;border:1px solid #34545a;border-radius:19px;background:#132730}
+  .help-nav-label{margin:10px 10px 3px;color:#91acae;font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase}
+  .help-nav-label:first-child{margin-top:0}
+  .help-nav button{min-height:42px;padding:9px 11px;border:1px solid transparent;border-radius:10px;background:transparent;color:#c7d9dc;text-align:left;font-size:13px;font-weight:700}
+  .help-nav button:hover{background:#204047}
+  .help-nav button[aria-current="page"]{border-color:var(--accent);background:var(--accent-soft);color:#f7fffb}
+  .help-page{min-width:0}
+  .help-page h2{margin:2px 0 7px;font-size:clamp(25px,2.5vw,34px);letter-spacing:-.045em}
+  .help-page h3{margin:0 0 9px;font-size:18px}
+  .help-page-lead{margin:0 0 17px;color:#b8ced1;font-size:14px}
+  .help-page .card{margin-bottom:15px}
+  .help-page .card:last-child{margin-bottom:0}
+  .help-page p,.help-page li,.help-page td,.help-page th{font-size:14px;line-height:1.55}
+  .help-page p{margin:7px 0 0;color:#cbd9e3}
+  .help-page ol,.help-page ul{margin:8px 0 0;padding-left:22px;color:#cbd9e3}
+  .help-page li+li{margin-top:7px}
+  .help-page strong{color:#f3fbfd}
+  .help-page .help-result{margin-top:13px;padding:11px 13px;border-left:3px solid var(--accent);border-radius:0 9px 9px 0;background:#173238;color:#e2f6f1}
+  .help-table-wrap{width:100%;overflow-x:auto;margin-top:11px}
+  .help-page table{border-collapse:collapse;width:100%;min-width:480px;text-align:left}
+  .help-page th,.help-page td{padding:9px 11px;border-bottom:1px solid #405365;vertical-align:top}
+  .help-page th{color:#b9f2db;font-weight:800}
+  .help-page code{padding:2px 5px;border-radius:5px;background:#0d202b;color:#b9f2db;font-size:.92em;overflow-wrap:anywhere}
+  .help-page pre{overflow-x:auto;padding:13px;border:1px solid #405365;border-radius:11px;background:#0d202b}
+  .help-page pre code{padding:0;white-space:pre}
+  .help-note{color:#a9bfca!important;font-size:12px!important}
   .card{min-width:0;padding:22px;border:1px solid #30465a;border-radius:23px;background:linear-gradient(145deg,rgba(28,46,63,.96),rgba(17,30,45,.97));box-shadow:0 14px 32px rgba(0,0,0,.12)}
   body[data-view="shape"] .card{background:linear-gradient(145deg,#2b292a,#1d222b);border-color:#58483e}
   body[data-view="explore"] .card{background:linear-gradient(145deg,#292640,#1a1e33);border-color:#53466d}
@@ -148,7 +192,7 @@ static const char INDEX_HTML[] PROGMEM = u8R"HTML(
   .footer-credit{text-align:right}
   .footer-credit strong{color:#dbe9f5;font-weight:700}
   @media(max-width:1080px){.explore-grid,.all-explore-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.perform-grid{grid-template-columns:1fr 1fr}.shape-card{grid-template-columns:1fr}.shape-card .card-head{grid-column:1}.control-grid--three{grid-template-columns:repeat(2,minmax(0,1fr))}}
-  @media(max-width:760px){.app-shell{padding:18px 14px 28px}.masthead{align-items:flex-start}.brand-mark{width:58px;height:42px;font-size:20px}.brand-name{font-size:26px}.brand-sub{font-size:10px}.topbar{border-radius:18px}.topbar-actions{width:100%}.topbar-actions .btn,.topbar-actions .more{flex:1}.more summary{width:100%}.view-tabs{width:100%}.view-tab{flex:0 0 auto;min-width:120px;padding:8px 12px}.view-tab small{display:none}.perform-grid,.shape-grid,.explore-grid,.all-shape-grid,.all-explore-grid{grid-template-columns:1fr}.card{padding:19px}.card--hero{min-height:225px}.hero-art{width:270px;opacity:.6}.keyboard-head{flex-wrap:wrap}.keyboard-actions{width:100%;justify-content:space-between}.keyboard-dock{padding:16px}.footer{flex-direction:column}.footer-credit{text-align:left}}
+  @media(max-width:760px){.app-shell{padding:18px 14px 28px}.masthead{align-items:flex-start}.brand-mark{width:58px;height:42px;font-size:20px}.brand-name{font-size:26px}.brand-sub{font-size:10px}.topbar{border-radius:18px}.topbar-actions{width:100%}.topbar-actions .btn,.topbar-actions .more{flex:1}.more summary{width:100%}.view-tabs{width:100%}.view-tab{flex:0 0 auto;min-width:120px;padding:8px 12px}.view-tab small{display:none}.perform-grid,.shape-grid,.explore-grid,.all-shape-grid,.all-explore-grid,.help-grid{grid-template-columns:1fr}.help-layout{grid-template-columns:minmax(0,1fr)}.help-nav{position:static;grid-template-columns:repeat(2,minmax(0,1fr))}.help-nav-label{grid-column:1/-1}.card{padding:19px}.card--hero{min-height:225px}.hero-art{width:270px;opacity:.6}.keyboard-head{flex-wrap:wrap}.keyboard-actions{width:100%;justify-content:space-between}.keyboard-dock{padding:16px}.footer{flex-direction:column}.footer-credit{text-align:left}}
   @media(max-width:450px){.masthead{flex-direction:column;gap:12px}.link-statuses{justify-content:flex-start}.connection{align-self:flex-start;max-width:100%;white-space:normal}.field--patch,.field--name{flex-basis:100%}.topbar-actions{display:grid;grid-template-columns:1fr 1fr}.topbar-actions .more{grid-column:1/-1}.control-grid,.control-grid--three,.fx-grid{grid-template-columns:1fr}.shape-card{grid-template-columns:1fr}.view-intro h1{font-size:31px}.keyboard-head{align-items:flex-start}.keyboard-head p{max-width:170px}.effect{padding:14px}}
   @media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
 </style>
@@ -169,9 +213,9 @@ static const char INDEX_HTML[] PROGMEM = u8R"HTML(
     <div class="topbar-actions">
       <button id="patchLoad" type="button" class="btn">Load patch</button>
       <button id="patchSave" type="button" class="btn btn--primary">Save patch</button>
+      <button id="randomBtn" type="button" class="btn">Randomize</button>
       <button id="panicBtn" type="button" class="btn btn--danger" aria-label="Panic — all sound off">Panic</button>
       <details class="more" id="moreActions"><summary>More actions</summary><div class="more-panel">
-        <button id="randomBtn" type="button" class="btn">Randomize sound</button>
         <button id="commitBtn" type="button" class="btn">Commit snapshot</button>
         <button id="loadCommitBtn" type="button" class="btn">Load committed sound</button>
         <button id="syncUnoBtn" type="button" class="btn" disabled>Sync Pico patch to Uno</button>
@@ -194,6 +238,7 @@ static const char INDEX_HTML[] PROGMEM = u8R"HTML(
     <button class="view-tab" type="button" role="tab" id="tab-shape" aria-controls="view-shape" aria-selected="false" data-view="shape" tabindex="-1"><strong>Shape</strong><small>Sculpt the core sound</small></button>
     <button class="view-tab" type="button" role="tab" id="tab-explore" aria-controls="view-explore" aria-selected="false" data-view="explore" tabindex="-1"><strong>Explore</strong><small>Movement and effects</small></button>
     <button class="view-tab" type="button" role="tab" id="tab-all" aria-controls="view-all" aria-selected="false" data-view="all" tabindex="-1"><strong>All controls</strong><small>Classic synth panel</small></button>
+    <button class="view-tab" type="button" role="tab" id="tab-help" aria-controls="view-help" aria-selected="false" data-view="help" tabindex="-1"><strong>Help</strong><small>Guides and details</small></button>
   </nav>
 
   <section class="keyboard-dock" aria-label="Playable keyboard"><div class="keyboard-head"><div><span class="eyebrow">Always ready</span><h2>Keyboard</h2><p>Play here or use A W S E D F T G Y H U J.</p></div><div class="keyboard-actions"><label class="velocity-control" for="kvel"><span>Velocity</span><input id="kvel" type="range" min="1" max="127" value="100" aria-describedby="kvelValue"><output id="kvelValue" for="kvel">100</output></label><div class="octave"><span>Octave</span><button type="button" id="octD" class="btn btn--small" aria-label="Octave down">−</button><span id="octLbl">3</span><button type="button" id="octU" class="btn btn--small" aria-label="Octave up">+</button></div></div></div><div class="keyboard-scroll"><div id="kb"></div></div></section>
@@ -263,6 +308,84 @@ static const char INDEX_HTML[] PROGMEM = u8R"HTML(
       <div class="view-intro"><div><span class="eyebrow">04 / Complete instrument</span><h1>All controls</h1><p>Every sound setting on one scrollable panel.</p></div></div>
       <div class="all-section"><h2>Sound engine</h2><div class="panel-grid all-shape-grid" id="allShapeCards"></div></div>
       <div class="all-section"><h2>Movement, rhythm & effects</h2><div class="panel-grid all-explore-grid" id="allExploreCards"></div></div>
+    </section>
+    <section class="view-panel" id="view-help" role="tabpanel" aria-labelledby="tab-help" hidden>
+      <div class="view-intro"><div><span class="eyebrow">05 / Onboard reference</span><h1>Help</h1><p>Choose a page below. This guide lives in the Pico panel and needs no PDF or separate download.</p></div></div>
+      <div class="help-layout">
+        <nav class="help-nav" aria-label="Help pages">
+          <span class="help-nav-label">User Guide</span>
+          <button type="button" data-help-target="start" aria-current="page">Start here</button>
+          <button type="button" data-help-target="play">Play the panel</button>
+          <button type="button" data-help-target="sound">Shape a sound</button>
+          <button type="button" data-help-target="patches">Patches &amp; presets</button>
+          <button type="button" data-help-target="network">MIDI &amp; Logic</button>
+          <button type="button" data-help-target="led">LED display</button>
+          <button type="button" data-help-target="troubleshoot">Troubleshooting</button>
+          <span class="help-nav-label">Technical details</span>
+          <button type="button" data-help-target="connections">Connections</button>
+          <button type="button" data-help-target="messages">Messages &amp; MIDI</button>
+          <button type="button" data-help-target="engine">Sound engine</button>
+        </nav>
+        <div class="help-content">
+          <section class="help-page" id="help-start" data-help-page="start" aria-labelledby="help-start-title">
+            <span class="eyebrow">User Guide / 01</span><h2 id="help-start-title" tabindex="-1">Start here</h2><p class="help-page-lead">The Pico hosts this panel and remembers patches. The Uno R4 makes the sound. Both boards are powered through their own USB cables in the photographed development build.</p>
+            <div class="card"><h3>Play your first note</h3><ol><li>Power both boards. Open <strong>http://quarkwave.local/</strong> from a device on the same local network as the Pico, or use the Pico IP address if the name does not resolve.</li><li>Wait for <strong>Pico: Connected</strong> and <strong>Uno: Connected to Pico</strong>. <strong>RTP-MIDI: No controller</strong> is normal when playing from this page.</li><li>In Perform, set <strong>Volume</strong> low and play a key above. The default browser Velocity is 100. Select a factory sound and choose <strong>Load patch</strong> to change sounds.</li></ol><p class="help-result"><strong>Expected:</strong> the Uno LED display responds to the note. A clean Uno startup receives the Pico's selected sound without waiting for a browser to open.</p></div>
+            <div class="card"><h3>Hear the current build</h3><p>The physical A0 line-output circuit is <strong>not built</strong> on the photographed instrument. If the optional Uno USB-audio firmware is installed, select <strong>QuarkWave USB Audio</strong> as a mono input in Logic Pro, enable Input Monitoring, and start with your listening level low. The owner has confirmed this route in Logic. Without that firmware or a built audio circuit, use the matrix for note checks; the connection labels alone do not prove audible output.</p></div>
+          </section>
+          <section class="help-page" id="help-play" data-help-page="play" aria-labelledby="help-play-title" hidden>
+            <span class="eyebrow">User Guide / 02</span><h2 id="help-play-title" tabindex="-1">Play the panel</h2><p class="help-page-lead">The patch strip and keyboard above remain mounted in every view. Switching views does not reset the sound or interrupt held notes.</p>
+            <div class="card"><h3>Keyboard and expression</h3><ol><li>Play the on-screen keys or computer keys <strong>A W S E D F T G Y H U J</strong>. Use − and + to shift the browser keyboard octave.</li><li>Set <strong>Velocity</strong> from 1 to 127 before a new note. Notes already held keep their original velocity; the setting resets to 100 on page reload and is not part of a patch.</li><li>In Perform, try <strong>Volume</strong>, <strong>Filter cutoff</strong>, <strong>Osc morph</strong>, <strong>Arpeggiator</strong>, and <strong>Sustain notes</strong>.</li></ol><p class="help-result"><strong>Expected:</strong> Perform's quick controls adjust the same live sound settings as Shape and Explore.</p></div>
+            <div class="card"><h3>Choose a view</h3><p><strong>Perform</strong> keeps a large keyboard and quick controls in reach. <strong>Shape</strong> follows oscillator, envelope, filter, and voice response. <strong>Explore</strong> contains tempo, modulation, effects, and matrix views. <strong>All controls</strong> puts the same Shape and Explore controls on one scrollable panel. <strong>Help</strong> is this reference. The selected view is remembered in this browser, not saved with a patch.</p><p>If a note hangs, choose <strong>Panic</strong> in the patch strip. It sends All Sound Off and clears browser-held notes.</p></div>
+          </section>
+          <section class="help-page" id="help-sound" data-help-page="sound" aria-labelledby="help-sound-title" hidden>
+            <span class="eyebrow">User Guide / 03</span><h2 id="help-sound-title" tabindex="-1">Shape a sound</h2><p class="help-page-lead">Load a factory sound first, then change one section at a time. Descriptions here follow the source; audible differences are for you to test.</p>
+            <div class="card"><h3>Source, contour, and tone</h3><ol><li>In Shape, move <strong>Morph</strong> while holding a note. It travels through sine, triangle, saw, and square character. <strong>Unison</strong> layers one to three oscillators per note; <strong>Detune</strong> spreads them.</li><li>Change <strong>Attack</strong> for a slower start, <strong>Decay</strong> and <strong>Sustain</strong> for the held level, and <strong>Release</strong> for the tail. The drawing previews settings, not measured audio.</li><li>Enable <strong>Filter on</strong>, lower <strong>Cutoff</strong> for a darker sound, and raise <strong>Resonance</strong> gradually. Try <strong>Glide</strong> and <strong>Noise</strong> last.</li></ol></div>
+            <div class="card"><h3>Movement, rhythm, and effects</h3><ol><li>In Explore, raise LFO 01 <strong>Cutoff amount</strong> and adjust <strong>Rate</strong>. Its other routes move morph, amplitude, or detune. Vibrato is a separate LFO.</li><li>For repeated notes, select an <strong>Arpeggiator</strong> mode, then set division and gate. Internal BPM works without a clock source. For external timing, enable <strong>Use external MIDI clock</strong> and supply MIDI Clock.</li><li>Add effects gradually. Signal order is <strong>chorus → drive/fold → bitcrush → tremolo → delay</strong>. Delay Sync uses a sixteenth note of the active tempo.</li></ol><p class="help-result"><strong>Try:</strong> load Pluck, lengthen Release, then add a little Chorus Mix and Delay Mix. Save As to keep the variation.</p></div>
+          </section>
+          <section class="help-page" id="help-patches" data-help-page="patches" aria-labelledby="help-patches-title" hidden>
+            <span class="eyebrow">User Guide / 04</span><h2 id="help-patches-title" tabindex="-1">Patches &amp; presets</h2><p class="help-page-lead">Eight factory presets are read-only. Eight user slots on the Pico are empty on a new unit until saved; an existing file is occupied even if its name looks like P0.</p>
+            <div class="card"><h3>Factory sounds</h3><div class="help-table-wrap"><table><thead><tr><th>Sound</th><th>Starting character</th></tr></thead><tbody><tr><td>Warm Pad</td><td>Wide, slow chords</td></tr><tr><td>Pluck</td><td>Short notes and velocity response</td></tr><tr><td>Solid Bass</td><td>Single-note bass and glide</td></tr><tr><td>PWM Lead</td><td>Morph movement and lead lines</td></tr><tr><td>EP Keys</td><td>Velocity-sensitive keys</td></tr><tr><td>Sweep Pad</td><td>Slow filter movement</td></tr><tr><td>Noise Perc</td><td>Noisy short notes</td></tr><tr><td>Chrs Strngs</td><td>Layered strings and chorus</td></tr></tbody></table></div><p class="help-note">These are suggested uses from preset settings, not verified acoustic descriptions.</p></div>
+            <div class="card"><h3>Keep or recover a sound</h3><ol><li>Select a patch and choose <strong>Load patch</strong>. Edits to the current sound are lost when another patch is loaded unless saved first.</li><li>For an edited factory sound, enter a name, choose <strong>Save As</strong>, select a user slot, and choose <strong>Save to slot</strong>. Confirm before replacing an occupied slot. An ordinary <strong>Save patch</strong> updates the selected user slot.</li><li>Choose <strong>Randomize</strong> in the patch strip to explore a new live sound. It can use the full valid range, including effects; it does not change the selected slot, sustain pedal, or browser Velocity.</li><li><strong>More actions → Commit snapshot</strong> keeps a separate Pico snapshot. <strong>Load committed sound</strong> restores it. Check the action status for success.</li></ol></div>
+            <div class="card"><h3>Standalone sound and Pico sync</h3><p>If the Uno reports <strong>Connected to Pico · standalone sound</strong>, an external MIDI input has controlled it. The Pico leaves that sound alone. To replace it, stop playing, choose <strong>More actions → Sync Pico patch to Uno</strong>, read the warning, and confirm. Sync resets the sound and held notes; wait for <strong>Uno: Connected to Pico</strong>.</p></div>
+          </section>
+          <section class="help-page" id="help-network" data-help-page="network" aria-labelledby="help-network-title" hidden>
+            <span class="eyebrow">User Guide / 05</span><h2 id="help-network-title" tabindex="-1">MIDI &amp; Logic</h2><p class="help-page-lead">RTP-MIDI is hosted by the Pico. The Uno's Wi-Fi and BLE-MIDI are disabled in this build; the proposed physical DIN input is not yet built.</p>
+            <div class="card"><h3>Connect a wireless controller</h3><ol><li>Power both boards and check <strong>Uno: Connected to Pico</strong>. Put the computer and Pico on the same reachable network.</li><li>On a Mac, open <strong>Audio MIDI Setup → Window → Show MIDI Studio → Configure Network Driver</strong>. Add and enable an <strong>RTP</strong> session. In Directory, connect to <strong>QuarkWave</strong>, or manually enter the Pico IP and port <strong>5004</strong>.</li><li>On Windows, use an RTP-MIDI driver such as rtpMIDI. Add and enable a session, connect to <strong>QuarkWave</strong> in Directory, then choose your local session as the music app's MIDI output. Windows setup has not been accepted end to end on this build.</li></ol><p class="help-result"><strong>Expected:</strong> the browser reports <strong>RTP-MIDI: Controller connected</strong>. This Pico build admits one RTP controller session at a time.</p></div>
+            <div class="card"><h3>Logic Pro: MIDI and sound are separate</h3><p>To hear the current experimental audio route, connect Uno USB and select <strong>QuarkWave USB Audio</strong> as Logic's mono input, then enable Input Monitoring. To sequence notes, connect Logic's External MIDI track to the Mac RTP session; the Pico forwards them to the Uno. Leave ordinary Program Change sending off for a first test: QuarkWave uses selected numbers for sound commands, not factory-preset selection. Use a real-time audio recording or bounce for the Uno's output. The owner confirmed Logic USB audio; Logic-to-Pico RTP sequencing still needs an end-to-end check.</p></div>
+            <div class="card"><h3>Clock and disconnects</h3><p>Explore can choose external MIDI clock. Clock pulses alone do not change that setting. The Uno accepts measured 40–240 BPM, prefers valid recent DIN clock over RTP, and holds the last valid tempo if pulses stop. Start resets the arp pattern, Continue resumes, and Stop releases its current arp note. On a recognized RTP disconnect, the Pico releases that controller's notes and pedal without releasing notes held by another input; a silent network loss waits for session timeout.</p></div>
+          </section>
+          <section class="help-page" id="help-led" data-help-page="led" aria-labelledby="help-led-title" hidden>
+            <span class="eyebrow">User Guide / 06</span><h2 id="help-led-title" tabindex="-1">Uno LED display</h2><p class="help-page-lead">The Uno's 12 × 8 red matrix shows activity while playing. Choose Status, VU meter, or Scope in Explore or All controls; the scrolling “Viz:” label temporarily replaces the view.</p>
+            <div class="card"><h3>Three views</h3><p><strong>Status</strong> draws up to four voice-envelope bars. <strong>VU meter</strong> draws eleven recent mono output levels over time, not frequency bands or stereo channels. <strong>Scope</strong> draws an automatically scaled trace of synthesized output. These are firmware views before the DAC, not calibrated readings at an audio jack.</p></div>
+            <div class="card"><h3>Top row, left to right</h3><div class="help-table-wrap"><table><thead><tr><th>Column</th><th>Indicator</th><th>Column</th><th>Indicator</th></tr></thead><tbody><tr><td>1</td><td>Pico sound loaded</td><td>7</td><td>Pico MIDI received · brief</td></tr><tr><td>2</td><td>External MIDI used</td><td>8</td><td>Voice stolen · brief</td></tr><tr><td>3</td><td>Valid external clock active</td><td>9</td><td>External sound activity · brief</td></tr><tr><td>4</td><td>Sustain held</td><td>10</td><td>Note started · brief</td></tr><tr><td>5</td><td>Arpeggiator enabled</td><td>11</td><td>Audio timing slip · brief</td></tr><tr><td>6</td><td>Recent Pico handshake</td><td>12</td><td>Heartbeat</td></tr></tbody></table></div><p>Count columns from left to right as viewed on the board. The bottom-right pixel can mark a slow LED update. A scrolling label hides the top row until it finishes. The current photo predates these new status meanings; each new pixel still needs individual hardware acceptance.</p></div>
+          </section>
+          <section class="help-page" id="help-troubleshoot" data-help-page="troubleshoot" aria-labelledby="help-troubleshoot-title" hidden>
+            <span class="eyebrow">User Guide / 07</span><h2 id="help-troubleshoot-title" tabindex="-1">Troubleshooting</h2><p class="help-page-lead">Check the three connection labels separately: browser ↔ Pico, Pico ↔ Uno, and RTP controller ↔ Pico.</p>
+            <div class="card"><div class="help-table-wrap"><table><thead><tr><th>What you see</th><th>First check</th></tr></thead><tbody><tr><td>Page will not open</td><td>Check Pico power and Wi-Fi. Try its IP address if quarkwave.local does not resolve.</td></tr><tr><td>Pico: Not connected</td><td>Reload the page and check Pico Wi-Fi. The browser's WebSocket uses port 8081.</td></tr><tr><td>Uno: Not connected to Pico</td><td>Check Uno power, both UART signal wires, common ground, and the Uno-TX level shifter.</td></tr><tr><td>Connected, but silent</td><td>Check the listening route. The photographed build has no physical A0 jack; the optional USB-audio firmware offers the tested Logic input.</td></tr><tr><td>Standalone sound</td><td>Keep playing it, or use explicit Sync Pico patch to Uno after reading its warning.</td></tr><tr><td>Sound sync failed</td><td>Check the return MIDI wire, then try explicit sync again.</td></tr><tr><td>Note stays on</td><td>Choose Panic. For a silent wireless loss, the RTP session may take time to expire.</td></tr><tr><td>Save As failed</td><td>Read the action status. An existing unreadable file counts as occupied; do not assume it is empty.</td></tr></tbody></table></div><p class="help-note">The physical audio circuit, Windows walkthrough, external-clock timing, and DIN input have not passed full hardware acceptance.</p></div>
+          </section>
+          <section class="help-page" id="help-connections" data-help-page="connections" aria-labelledby="help-connections-title" hidden>
+            <span class="eyebrow">Technical details / 01</span><h2 id="help-connections-title" tabindex="-1">Connections</h2><p class="help-page-lead">Current wiring and proposed additions are different. The photographed build has two USB-powered boards and a bidirectional level-shifted MIDI UART.</p>
+            <div class="card"><h3>Current Pico–Uno wiring</h3><div class="help-flow" role="img" aria-label="Pico GPIO zero transmits MIDI to Uno D0. Uno D1 transmits MIDI through a five-volt to three-point-three-volt level shifter to Pico GPIO one. Grounds are common; power comes from separate USB ports."><span>Pico GPIO 0 TX</span><b>→</b><span>Uno D0 RX</span><b>·</b><span>Uno D1 TX</span><b>→</b><span>5 V → 3.3 V shifter</span><b>→</b><span>Pico GPIO 1 RX</span></div><p>Both UART directions run at <strong>31,250 baud</strong>; common ground is required. The owner confirms the Uno return-wire level shift. Exact shifter channel endpoints and voltage at Pico RX have not been measured. The two 5 V USB rails are not joined.</p></div>
+            <div class="card"><h3>Audio and DIN plans</h3><p>The Uno writes 12-bit samples to <strong>A0</strong>. Its physical line jack is unbuilt. The proposed mono line stage uses an MCP6002 buffer, AC coupling, and an output divider before a powered speaker or mixer <strong>line input</strong>. The owner's TDA1308 board is a separate proposed headphone amplifier fed after that buffered node, with two separate channels for both ears. Neither circuit is an as-built audio path. The Uno firmware also listens on D2 through SoftwareSerial for a future opto-isolated DIN MIDI IN; a direct DIN-jack-to-pin wire is not the proposed circuit.</p><p class="help-result"><strong>Before building:</strong> use the detailed repository connection schematic and verify the actual part pinouts, continuity, power, and output DC. The onboard Help is an orientation guide, not an as-built wiring netlist.</p></div>
+          </section>
+          <section class="help-page" id="help-messages" data-help-page="messages" aria-labelledby="help-messages-title" hidden>
+            <span class="eyebrow">Technical details / 02</span><h2 id="help-messages-title" tabindex="-1">Messages &amp; MIDI</h2><p class="help-page-lead">The browser sends JSON to the Pico WebSocket on port 8081. The Pico converts sound controls to MIDI on the wired Uno link.</p>
+            <div class="card"><h3>Browser → Pico examples</h3><pre><code>{"type":"noteOn","note":60,"velocity":100}
+{"type":"noteOff","note":60}
+{"type":"control","param":"cutoff","value":1400}
+{"type":"randomize"}</code></pre><p>Patch actions use <code>loadPatch</code> with an <code>index</code>, <code>savePatch</code> with user <code>index</code>, <code>name</code>, and <code>overwrite</code>, plus <code>commitPatch</code>, <code>loadCommitPatch</code>, and <code>syncUno</code>. The Pico returns <code>patchData</code>, <code>patchList</code>, <code>patchSaveResult</code>, and <code>unoStatus</code>. Check <code>patchSaveResult.success</code> before treating a save as complete. Factory indexes 100–107 cannot be saved.</p></div>
+            <div class="card"><h3>Uno MIDI control groups</h3><p>MIDI CC values are 0–127. Main sound CCs: <strong>7</strong> gain, <strong>5</strong> glide, <strong>71/74/91</strong> filter, <strong>72/73/75/23</strong> ADSR, <strong>76/94/95/93</strong> oscillator and noise, <strong>1/2/3/26</strong> LFO1, <strong>27/28</strong> vibrato, <strong>12/13/14</strong> delay, <strong>21</strong> chorus mix, <strong>29/30/31</strong> bitcrush, <strong>77/78/79/80</strong> tremolo/drive/fold, and <strong>18/19/20</strong> arpeggiator. CC64 is sustain; CC120 is All Sound Off. The Pico stores controls at effective MIDI steps, so a recalled value can be rounded.</p></div>
+            <div class="card"><h3>Program Change</h3><div class="help-table-wrap"><table><thead><tr><th>Message</th><th>Action</th><th>Accepted input</th></tr></thead><tbody><tr><td>PC 0</td><td>Reset synth controls</td><td>Pico only</td></tr><tr><td>PC 10–12</td><td>Status, VU, Scope</td><td>Pico only</td></tr><tr><td>PC 100/101</td><td>External/internal tempo</td><td>Pico, DIN, RTP</td></tr><tr><td>PC 102/103</td><td>Delay sync on/off</td><td>Pico, DIN, RTP</td></tr><tr><td>PC 110–112</td><td>Vibrato sine/triangle/square</td><td>Pico, DIN, RTP</td></tr></tbody></table></div><p>Generic Program Changes do not select the Pico's factory patches. Some controller menus show program numbers one higher than the transmitted MIDI byte; verify the byte if a command seems wrong.</p></div>
+            <div class="card"><h3>QuarkWave SysEx bytes</h3><p>Every message starts <code>F0 7D 00</code> and ends <code>F7</code>. <code>7D</code> is the non-commercial MIDI identifier used by this project. The command and payload between those boundaries are:</p><div class="help-table-wrap"><table><thead><tr><th>Command + payload</th><th>Meaning</th><th>Direction / input</th></tr></thead><tbody><tr><td><code>01 &lt;BPM low&gt; &lt;BPM high&gt;</code></td><td>Internal BPM 40–240, little-endian seven-bit bytes</td><td>Pico, DIN, RTP → Uno</td></tr><tr><td><code>02 &lt;route&gt; &lt;amount&gt;</code></td><td>LFO1 route 0=morph or 1=amplitude; amount 0–127</td><td>Pico, DIN, RTP → Uno</td></tr><tr><td><code>03 &lt;depth&gt;</code></td><td>Chorus depth 0–20</td><td>Pico, DIN, RTP → Uno</td></tr><tr><td><code>10</code> / <code>11 &lt;flags&gt;</code></td><td>Readiness request / status reply</td><td>Pico → Uno / Uno → Pico</td></tr><tr><td><code>12</code> / <code>13 &lt;flags&gt;</code></td><td>Patch completion / acknowledgment</td><td>Pico → Uno / Uno → Pico</td></tr><tr><td><code>14</code></td><td>Forwarded RTP sound-activity marker</td><td>Pico → Uno only</td></tr><tr><td><code>15 &lt;action&gt; &lt;note&gt; &lt;velocity&gt;</code></td><td>Forwarded RTP Note On/Off; action 0/1</td><td>Pico → Uno only</td></tr><tr><td><code>16 &lt;on&gt;</code></td><td>Forwarded RTP sustain; 1/0</td><td>Pico → Uno only</td></tr></tbody></table></div><p>In status flags, bit 0 marks standalone sound activity and bit 1 marks a completed Pico patch. Clock alone does not set bit 0. Pico-only commands are not accepted from external RTP peers.</p></div>
+          </section>
+          <section class="help-page" id="help-engine" data-help-page="engine" aria-labelledby="help-engine-title" hidden>
+            <span class="eyebrow">Technical details / 03</span><h2 id="help-engine-title" tabindex="-1">Sound engine</h2><p class="help-page-lead">The Uno owns live synthesis state. The Pico owns patch files, browser control, and the RTP-MIDI gateway.</p>
+            <div class="card"><h3>Audio path</h3><div class="help-flow" role="img" aria-label="MIDI notes drive four voices; voices pass through a global filter, chorus, drive and fold, bitcrush, tremolo, delay, master gain, and the A0 DAC."><span>MIDI notes</span><b>→</b><span>4 voices</span><b>→</b><span>Filter</span><b>→</b><span>Chorus</span><b>→</b><span>Drive / fold</span><b>→</b><span>Bitcrush</span><b>→</b><span>Tremolo</span><b>→</b><span>Delay</span><b>→</b><span>A0 DAC</span></div><p>Each voice can use up to three unison oscillators. The current build uses a global two-pole state-variable low-pass filter. LFOs, velocity, and the arpeggiator modulate the voice and filter stages. The 22,050 samples/s rate is a scheduling target; a demanding four-voice/all-effects diagnostic met that <strong>average write count</strong> with Uno Wi-Fi off, but some writes were late. Evenly spaced DAC timing and physical output quality remain unmeasured.</p></div>
+            <div class="card"><h3>Patch lifecycle and link state</h3><p>The Pico stores eight user files in LittleFS; eight factory sounds are compiled into its firmware. It remembers the last explicitly loaded factory or user patch. On a clean Uno startup, the Pico probes readiness over the return MIDI wire, resets and transfers that selected patch, then waits for completion acknowledgment. Browser opening does not trigger the sync. If the Uno reports standalone sound activity, the Pico preserves it until an explicit browser sync or patch load. Clock alone does not mark standalone activity. A recognized RTP disconnect releases only that session's owned notes and sustain state.</p></div>
+            <div class="card"><h3>Build limits</h3><p>Uno Wi-Fi, Uno RTP-MIDI, and BLE-MIDI are disabled in this source build; Pico RTP-MIDI is enabled for one peer. The separate physical DIN interface, A0 line output, and headphone amplifier are proposed hardware. The optional USB-audio experiment has worked on the owner's Mac in Logic Pro, but it is a distinct Uno build and not a promise for every host or workload.</p></div>
+          </section>
+        </div>
+      </div>
     </section>
   </main>
 
@@ -1064,8 +1187,38 @@ function refreshPanel() {
   drawEnvelope();
 }
 
+function activateHelpPage(page, remember = true, focusHeading = false) {
+  const target = document.getElementById('help-' + page);
+  if (!target || !target.classList.contains('help-page')) {
+    page = 'start';
+  }
+  document.querySelectorAll('.help-page').forEach(section => {
+    section.hidden = section.dataset.helpPage !== page;
+  });
+  document.querySelectorAll('.help-nav button[data-help-target]').forEach(button => {
+    if (button.dataset.helpTarget === page) button.setAttribute('aria-current', 'page');
+    else button.removeAttribute('aria-current');
+  });
+  if (remember) {
+    try { localStorage.setItem('quarkwave-help-page', page); } catch (_) {}
+  }
+  if (focusHeading) {
+    document.getElementById('help-' + page).querySelector('h2').focus();
+  }
+}
+
+function initHelpPages() {
+  let saved = 'start';
+  try { saved = localStorage.getItem('quarkwave-help-page') || saved; } catch (_) {}
+  activateHelpPage(saved, false);
+  document.querySelectorAll('.help-nav button[data-help-target]').forEach(button => {
+    button.setAttribute('aria-controls', 'help-' + button.dataset.helpTarget);
+    button.addEventListener('click', () => activateHelpPage(button.dataset.helpTarget, true, true));
+  });
+}
+
 function activateView(view, remember = true) {
-  if (!['perform', 'shape', 'explore', 'all'].includes(view)) view = 'perform';
+  if (!['perform', 'shape', 'explore', 'all', 'help'].includes(view)) view = 'perform';
   // Move the real cards, including their inputs and listeners. No duplicate controls or IDs.
   const groups = [
     [document.querySelector('#view-shape .shape-grid'), document.getElementById('allShapeCards')],
@@ -1117,7 +1270,7 @@ function setKbEnabled(){
 function setUnoStatus(){
   const label = document.getElementById('unoLabel');
   const state = unoLink.syncFailed ? 'Sound sync failed' : unoLink.mode === 'standalone' ? 'Connected to Pico · standalone sound'
-    : unoLink.mode === 'syncing' ? 'Connected to Pico · loading sound…' : unoLink.mode === 'pico' ? 'Connected to Pico · sound loaded'
+    : unoLink.mode === 'syncing' ? 'Connected to Pico · loading sound…' : unoLink.mode === 'pico' ? 'Connected to Pico'
     : unoLink.mode === 'unsynced' ? 'Connected to Pico · awaiting sound' : 'Not connected to Pico';
   label.textContent = 'Uno: ' + state;
   document.getElementById('unoConnection').dataset.connected = String(!!unoLink.connected);
@@ -1128,6 +1281,7 @@ function setUnoStatus(){
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  initHelpPages();
   initViewTabs();
   wireControls();
   wireQuickControls();

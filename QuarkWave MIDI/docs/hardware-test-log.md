@@ -1,6 +1,6 @@
 # QuarkWave hardware test log
 
-**Purpose:** record repeatable results for the assembled Pico W and Uno R4. The guides are **source-reviewed, hardware untested** until the relevant checks pass. Copy this page for each firmware and wiring revision; record actual observations rather than replacing expectations with a checkmark.
+**Purpose:** record repeatable results for the assembled Pico W and Uno R4. The guides are **source-reviewed, hardware untested** until the relevant checks pass. Copy this page for each firmware and wiring revision; record actual observations rather than replacing expectations with a checkmark. The dated records below are chronological: older entries describe earlier builds and are superseded by later entries, not by edits to their measurements.
 
 ## Test record
 
@@ -26,14 +26,14 @@ For each check, record **Pass / Fail / Not run**, the observed behavior, and a s
 | Browser opens before / after sync | Pico and Uno status labels remain separate and consistent. | |
 | Browser note and release | Pointer and computer keys send notes; release and browser disconnect end owned notes. | |
 | Keyboard Velocity 1 / 100 / 127 | New notes use the selected velocity; held notes keep the old velocity. | |
-| Perform / Shape / Explore / All controls | Controls keep values; held browser notes continue across view changes. | |
+| Perform / Shape / Explore / All controls / Help | Controls keep values; held browser notes continue across view changes. Help pages make no sound change. | |
 | Factory Load and user Save As | Factory sounds stay read-only; Save As chooses a slot and confirms occupied replacement. | |
 | User Save, Load, restart | Saved file, selected slot, and recovered sound agree; failure does not change selection. | |
 | Commit / Load committed sound | Snapshot can be saved and restored separately from user slots. | |
 | Randomize | Returned panel values remain inside each control's range, including effects. | |
 | Panic and visualizations | Panic silences notes; Status, VU, and Scope select the intended Uno LED view. | |
 | DIN without Pico | Notes, bend, sustain, and CC work with Uno defaults; no Pico is required. | |
-| RTP-MIDI without Pico | `QuarkWave` session accepts notes and sound controls. | |
+| RTP-MIDI through Pico | The Pico's `QuarkWave` session accepts notes and sound controls, then forwards them to the Uno. Without the Pico, no RTP-MIDI session exists in this build. | |
 | Standalone then attach Pico | Existing sound remains until explicit **Sync Pico patch to Uno**; warning appears. | |
 | External Clock and transport | 40 / 120 / 240 BPM, Start / Continue / Stop, DIN priority, two-second failover, and held tempo behave as documented. | |
 | External custom messages | Accepted sound Program Changes and SysEx change sound and mark standalone activity; Pico-only commands have no effect on DIN/RTP. | |
@@ -146,7 +146,7 @@ The Pico and Uno were updated with source-aware note and sustain handling. The P
 
 ## Clearer Uno connection label — 2026-09-23
 
-The browser's `mode: pico` status previously read **Uno: Connected · Pico patch**. The Pico/Uno protocol and mode value are unchanged; the panel now reads **Uno: Connected to Pico · sound loaded**. “Connected to Pico” describes the recent two-way MIDI handshake, and “sound loaded” describes the Uno's acknowledgment of the Pico's selected sound settings. The standalone, loading, awaiting-sound, offline, and sync-failure labels were adjusted to use the same language. The updated Pico sketch compiled and was uploaded. A live browser WebSocket reported `connected: true`, `mode: pico`, `syncFailed: false`, and the served HTML contained the new label. Fresh Perform, Shape, Explore, All controls, and staged Save As captures now show that wording. The captures do not establish audio output or save a patch. [Panel label](../QuarkWave_UI_MIDI/QuarkWave_UI.h), [connection meaning](technical-guide.md#browser-pico-interface).
+The browser's `mode: pico` status previously read **Uno: Connected · Pico patch**. The Pico/Uno protocol and mode value are unchanged; the panel now reads **Uno: Connected to Pico · sound loaded**. “Connected to Pico” describes the recent two-way MIDI handshake, and “sound loaded” describes the Uno's acknowledgment of the Pico's selected sound settings. The standalone, loading, awaiting-sound, offline, and sync-failure labels were adjusted to use the same language. The updated Pico sketch compiled and was uploaded. A live browser WebSocket reported `connected: true`, `mode: pico`, `syncFailed: false`, and the served HTML contained the new label. Fresh Perform, Shape, Explore, All controls, and staged Save As captures now show that wording. The captures do not establish audio output or save a patch. This is a historical label; the current source uses **Uno: Connected to Pico**. [Panel label](../QuarkWave_UI_MIDI/QuarkWave_UI.h), [connection meaning](technical-guide.md#browser--pico-interface).
 
 ## Multi-bar Uno VU display — 2026-09-23
 
@@ -159,3 +159,15 @@ The Uno sketch compiled. In the same temporary five-second four-voice, three-uni
 The Uno top row now uses columns 1–5 for Pico sound loaded, external MIDI used, valid external clock, sustain, and arpeggiator enabled. Column 8 briefly shows a voice steal, column 11 briefly shows an audio scheduler reset after more than 2 ms of lateness, and the note-start flash in column 10 is now drawn in Status, VU, and Scope. The existing Pico link, Pico receive, external activity, heartbeat, and bottom-right display timing signals remain. The top-row SVG and LED guide describe the exact conditions. [Uno source](../QuarkWave_MIDI/QuarkWave_MIDI.ino), [LED guide](led-display-guide.md).
 
 The Uno sketch compiled for **Arduino UNO R4 WiFi** (117,908 bytes flash, 16,300 bytes global RAM) and uploaded successfully over USB. The uploader reported the same serial port afterward. The local shell could not reach `quarkwave.local` or the previously recorded Pico IP, so the Pico handshake and the new physical LED patterns were not checked after this upload. Hardware acceptance still needs: sync a Pico patch; use an external MIDI controller; send a valid external clock; toggle sustain and arpeggiator; overlap five notes to see voice stealing; and exercise a demanding patch while watching for audio-slip flashes. A forced scheduler delay would test column 11, but that diagnostic should use a temporary build and the normal firmware should be restored afterward. Audible effects remain untested until the audio output is built.
+
+## Simpler Uno connection label — 2026-09-23
+
+The browser source now displays **Uno: Connected to Pico** for its normal acknowledged-patch state; the previous label added “sound loaded.” The standalone, loading, awaiting-sound, offline, and failure labels remain distinct. The connection state and Pico–Uno MIDI protocol are unchanged. All five panel guide images were rendered again from the current embedded page with source-defined Warm Pad settings and a simulated connected status. The page was not uploaded in this change, so these images are not a live post-upload test. [Panel status](../QuarkWave_UI_MIDI/QuarkWave_UI.h), [guide index](README.md).
+
+## Logic Pro USB-audio owner check — 2026-09-23
+
+After the corrected [USB-audio experiment](../experiments/usb-audio/README.md) was running, the owner reported that it **worked beautifully** in Logic Pro using the Uno as the USB audio input. This confirms that the Mac/Logic route worked for this setup. The report did not specify the Logic project rate, buffer size, whether MIDI came from the Pico browser or an RTP session, or the duration and effects used. Do not treat those details as verified. The [Network MIDI setup guide](network-midi-setup.md) gives a repeatable Logic audio and optional RTP procedure for follow-up testing.
+
+## Ten-page onboard Help — 2026-09-23
+
+The embedded panel now contains seven User Guide pages and three Technical details pages, all in the Pico's existing self-contained HTML. Browser checks on a source-rendered preview opened each page, verified the active navigation state and heading focus, held and released a computer-key note across page changes, and confirmed that a changed control value survived navigation. All ten topics fit desktop (1440 px), tablet (768 px), and phone (390 px) widths without document-level horizontal overflow. The final Pico sketch compiled with the expanded Help at 581,164 bytes of flash and 75,940 bytes of global RAM. Six guide images were rendered again with Warm Pad and simulated connection state. This Help update has **not** been uploaded to the Pico or accepted on physical hardware. The Markdown guides still hold the complete schematics, control-value tables, and test evidence; PDFs were not regenerated. [Embedded Help](../QuarkWave_UI_MIDI/QuarkWave_UI.h), [guide index](README.md).

@@ -21,8 +21,8 @@
 
 ## Play over Wi-Fi with the Pico attached
 
-1. Power both boards and wait until the browser reports **Uno: Connected**. Keep the controller and Pico on the same reachable network.
-2. In your RTP-MIDI software, connect to the Pico's `QuarkWave` session on UDP port `5004`. If discovery does not show it, use the Pico's network address.
+1. Power both boards and wait until the browser reports **Uno: Connected to Pico**. Keep the controller and Pico on the same reachable network.
+2. In your RTP-MIDI software, connect to the Pico's `QuarkWave` session on UDP port `5004`. If discovery does not show it, use the Pico's network address. For exact Mac and Windows steps, see [Network MIDI setup](network-midi-setup.md).
 3. Connect one wireless controller at a time. If it disconnects while notes or its sustain pedal are held, the Pico releases both on the Uno. The sound follows its release setting; a pedal held from the browser or DIN remains in effect. A silent network loss may take until the RTP session times out to be recognized; use **Panic** if you need an immediate release.
 4. Send a note, then release it. **Expected from source:** the Pico forwards both messages over its wired MIDI link. Its first sound message marks external activity so a clean Uno startup does not automatically replace a wireless-controlled sound. The message and disconnect paths have passed a two-board diagnostic; audible output remains untested. [Pico gateway](../QuarkWave_UI_MIDI/QuarkWave_UI_MIDI.ino), [Uno receiver](../QuarkWave_MIDI/QuarkWave_MIDI.ino).
 

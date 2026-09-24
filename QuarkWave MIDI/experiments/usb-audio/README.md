@@ -66,6 +66,9 @@ without blocking the synth loop.
   441,344 samples, about 20.02 seconds at 22,050 Hz.
 - The USB service peak observed during the four-note capture was 80 µs. This
   is a diagnostic maximum, not a full CPU-load measurement.
+- The owner subsequently confirmed that **Logic Pro worked with the Uno's USB
+  audio input** on their Mac. The [Logic and RTP-MIDI setup guide](../../docs/network-midi-setup.md)
+  distinguishes this audio route from MIDI sent to the Pico over the network.
 
 USB audio remains an experiment. More macOS recording app coverage, other
 operating systems, and long sessions with demanding effect settings have not

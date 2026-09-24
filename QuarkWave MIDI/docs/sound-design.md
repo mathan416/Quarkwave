@@ -1,6 +1,6 @@
 # Learn QuarkWave's sound controls
 
-**For:** musicians who know a little synth programming. **Status:** source-reviewed, hardware untested (firmware snapshot: 2026-09-22). These are listening exercises, not verified descriptions of the finished audio. Begin at a comfortable level. Reloading a factory patch discards unsaved changes; use [Save As](user-guide.md#save-load-and-recover-patches) first if you want to keep a result.
+**For:** musicians who know a little synth programming. **Status:** source-reviewed, hardware untested (firmware snapshot: 2026-09-23). These are listening exercises, not verified descriptions of the finished audio. Use the [optional USB-audio route](network-midi-setup.md#record-the-sound-while-playing-from-the-pico-page) for the current development build; the physical A0 line output is not yet built. Begin at a comfortable level. Reloading a factory patch discards unsaved changes; use [Save As](user-guide.md#save-load-and-recover-patches) first if you want to keep a result.
 
 Each exercise starts from a factory patch, changes one group of controls, and tells you what to compare. Load the named sound from the patch strip before starting. The [patch book](patch-book.md#factory-presets) describes the original settings.
 

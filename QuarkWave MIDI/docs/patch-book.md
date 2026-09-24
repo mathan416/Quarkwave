@@ -1,16 +1,16 @@
 # QuarkWave patch book
 
-**Status:** source-reviewed, hardware untested (firmware snapshot: 2026-09-22). The factory settings below come from the [Pico preset definitions](../QuarkWave_UI_MIDI/QuarkWave_UI_MIDI.ino#L205). Descriptions of how they might sound, and the new recipes, are suggestions to audition on an assembled instrument.
+**Status:** source-reviewed, hardware untested (firmware snapshot: 2026-09-23). The factory settings below come from the [Pico preset definitions](../QuarkWave_UI_MIDI/QuarkWave_UI_MIDI.ino#L345). Descriptions of how they might sound, and the new recipes, are suggestions to audition on an assembled instrument.
 
 ## Before you start
 
-The Pico contains eight read-only factory presets, numbered `100–107` in its patch list. A new Pico selects **Warm Pad**. The eight user slots, `0–7`, are separate; on a new Pico they are empty until you save. Factory edits live in the current sound until you load another patch or save them to a user slot. [Preset definitions](../QuarkWave_UI_MIDI/QuarkWave_UI_MIDI.ino#L205), [patch storage](../QuarkWave_UI_MIDI/QuarkWave_UI_MIDI.ino), [save procedure](user-guide.md#save-load-and-recover-patches).
+The Pico contains eight read-only factory presets, numbered `100–107` in its patch list. A new Pico selects **Warm Pad**. The eight user slots, `0–7`, are separate; on a new Pico they are empty until you save. Factory edits live in the current sound until you load another patch or save them to a user slot. [Preset definitions](../QuarkWave_UI_MIDI/QuarkWave_UI_MIDI.ino#L345), [patch storage](../QuarkWave_UI_MIDI/QuarkWave_UI_MIDI.ino), [save procedure](user-guide.md#save-load-and-recover-patches).
 
 To try a sound, choose it in the patch strip and select **Load patch**. Set a comfortable **Master volume** before playing. To keep an edit, enter a name, select **Save As**, choose one of the eight user slots, and select **Save to slot**. The panel asks before replacing an occupied slot. Saving never changes the factory preset. The keyboard's **Velocity** setting changes new browser notes but is not part of any patch. These operating steps are **source-reviewed, hardware untested**. [Browser patch actions](../QuarkWave_UI_MIDI/QuarkWave_UI.h), [Pico save handling](../QuarkWave_UI_MIDI/QuarkWave_UI_MIDI.ino).
 
 ## Factory presets
 
-The descriptions follow the initialized settings; they are starting points for listening, not claims from an audio test. Values shown here are rounded source settings. The Pico converts them to effective MIDI steps when loading, so a panel readout may differ slightly. All eight select internal tempo at 120 BPM, leave the arpeggiator off, and start with bitcrush, tremolo, drive, and fold mixes or amounts at zero. [Factory table](../QuarkWave_UI_MIDI/QuarkWave_UI_MIDI.ino#L205), [MIDI value conversion](technical-guide.md#panel-ranges-and-stored-patch-values).
+The descriptions follow the initialized settings; they are starting points for listening, not claims from an audio test. Values shown here are rounded source settings. The Pico converts them to effective MIDI steps when loading, so a panel readout may differ slightly. All eight select internal tempo at 120 BPM, leave the arpeggiator off, and start with bitcrush, tremolo, drive, and fold mixes or amounts at zero. [Factory table](../QuarkWave_UI_MIDI/QuarkWave_UI_MIDI.ino#L345), [MIDI value conversion](technical-guide.md#panel-ranges-and-stored-patch-values).
 
 | Factory sound | Source settings that shape it | First thing to try |
 | --- | --- | --- |
@@ -23,7 +23,7 @@ The descriptions follow the initialized settings; they are starting points for l
 | **Noise Perc** `106` | One oscillator, 0.5 noise amount, very short envelope, 3.2 kHz cutoff, strong velocity-to-cutoff response. | Play short notes across the keyboard, then adjust **Noise**. |
 | **Chrs Strngs** `107` | Three oscillators, 16-cent detune, 0.9 s release, 1.5 kHz cutoff, chorus mix 0.35 and light delay. | Hold a chord and compare **Chorus Mix** at its preset value and zero. |
 
-**A useful comparison:** Warm Pad, Sweep Pad, and Chrs Strngs all use three oscillators, but differ in envelope timing, filter movement, and chorus. Load each in turn and hold the same chord. Pluck, EP Keys, and Noise Perc show how envelope and velocity response change short notes. [Factory table](../QuarkWave_UI_MIDI/QuarkWave_UI_MIDI.ino#L205).
+**A useful comparison:** Warm Pad, Sweep Pad, and Chrs Strngs all use three oscillators, but differ in envelope timing, filter movement, and chorus. Load each in turn and hold the same chord. Pluck, EP Keys, and Noise Perc show how envelope and velocity response change short notes. [Factory table](../QuarkWave_UI_MIDI/QuarkWave_UI_MIDI.ino#L345).
 
 ## New sounds to try
 
